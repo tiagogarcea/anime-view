@@ -44,8 +44,9 @@ export default function Season({ items }: { items: SeasonItem[] }) {
     return g.filter((x) => x.itens.length);
   }, [lista]);
 
-  async function salvar(numero: number, episodio: number | null, senhaUsada = senha) {
-    const anterior = eps.get(numero) ?? null;
+  // `original` = valor antes da primeira tentativa; se a senha falhar e for cancelada, volta para ele
+  async function salvar(numero: number, episodio: number | null, senhaUsada = senha, original?: number | null) {
+    const anterior = original !== undefined ? original : eps.get(numero) ?? null;
     setEps((m) => new Map(m).set(numero, episodio));
     if (!senhaUsada) {
       setPedirSenha({ numero, episodio, anterior });
@@ -131,7 +132,7 @@ export default function Season({ items }: { items: SeasonItem[] }) {
             setSenha(s);
             const p = pedirSenha;
             setPedirSenha(null);
-            salvar(p.numero, p.episodio, s);
+            salvar(p.numero, p.episodio, s, p.anterior);
           }}
         />
       )}
