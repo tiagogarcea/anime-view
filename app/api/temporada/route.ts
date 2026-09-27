@@ -39,3 +39,15 @@ export async function POST(req: Request) {
     return Response.json({ ok: false, erro: "script" }, { status: 502 });
   }
 }
+
+// DIAGNÓSTICO TEMPORÁRIO: o que o script do Google devolve quando chamado pela Vercel
+export async function GET() {
+  const t0 = Date.now();
+  try {
+    const r = await fetch(SCRIPT_URL, { cache: "no-store", redirect: "follow" });
+    const txt = await r.text();
+    return Response.json({ status: r.status, url: r.url.slice(0, 80), tipo: r.headers.get("content-type"), ms: Date.now() - t0, inicio: txt.slice(0, 200) });
+  } catch (e) {
+    return Response.json({ erro: String(e), ms: Date.now() - t0 });
+  }
+}
