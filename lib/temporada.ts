@@ -148,8 +148,8 @@ export async function loadTemporada(): Promise<SeasonItem[]> {
           const r = await fetch(SCRIPT_URL, { next: { revalidate: 3600 } });
           const j = await r.json();
           const imgs = new Map<number, string>((j.itens ?? []).map((x: { numero: number; imagem: string }) => [Number(x.numero), x.imagem]));
-          // o Google devolve a capa em 2048 px; 240 px sobra para a miniatura
-          for (const it of itens) it.img = (imgs.get(it.numero) ?? "").replace(/=s\d+(?=[?&]|$)/, "=s240");
+          // o Google devolve a capa em 2048 px; 360 px deixa a miniatura nítida
+          for (const it of itens) it.img = (imgs.get(it.numero) ?? "").replace(/=s\d+(?=[?&]|$)/, "=s360");
         } catch { /* sem capas: o site mostra a inicial */ }
       })(),
       completarComAniList(itens).catch(() => { /* sem AniList: total fica "?" */ }),

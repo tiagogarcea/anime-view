@@ -54,7 +54,8 @@ button { cursor: pointer; }
 .gold { color: var(--gold); }
 .red { color: var(--red); }
 
-.shell { max-width: 1480px; margin: 0 auto; padding: 0 var(--gutter) 40px; }
+/* zoom de 85% no site todo; a largura máxima sobe na mesma proporção (1480 / 0,85) para ocupar o mesmo espaço */
+.shell { zoom: 0.85; max-width: 1740px; margin: 0 auto; padding: 0 var(--gutter) 40px; }
 
 /* ── Header ───────────────────────────────────────────── */
 .top {
@@ -406,7 +407,7 @@ select, .dir {
 .day.today .day-name { color: var(--cyan); border-bottom-color: var(--cyan); }
 .day-name span { font-size: 12px; letter-spacing: 1px; }
 .srow {
-  display: grid; grid-template-columns: auto 44px minmax(0, 1fr) auto; align-items: center; gap: 14px;
+  display: grid; grid-template-columns: auto 88px minmax(0, 1fr) auto; align-items: center; gap: 14px;
   padding: 8px 14px 8px 8px; margin-bottom: 6px; border: 1px solid var(--line); background: var(--panel);
   transition: background 0.2s, border-color 0.2s;
 }
@@ -424,9 +425,9 @@ select, .dir {
 .sbtn.pre:hover:not(.on) { color: var(--blue); border-color: var(--blue); }
 .stotal { margin-left: 8px; font-family: var(--display); font-size: 15px; color: var(--muted); min-width: 34px; }
 .saved { color: var(--green); }
-.sthumb { width: 44px; height: 60px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-size: 22px; color: rgba(255,255,255,0.35); border: 1px solid var(--line-2); }
+.sthumb { width: 88px; height: 124px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-size: 36px; color: rgba(255,255,255,0.35); border: 1px solid var(--line-2); border-radius: 4px; flex-shrink: 0; }
 .sthumb img { width: 100%; height: 100%; object-fit: cover; }
-.sname { font-family: var(--display); font-size: 15px; font-weight: 600; text-transform: uppercase; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sname { font-family: var(--display); font-size: 17px; font-weight: 600; text-transform: uppercase; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .smeta { font-size: 12px; color: var(--soft); margin-top: 3px; }
 .s-ok .smeta { color: var(--green); }
 .saving { color: var(--gold); }
@@ -447,8 +448,8 @@ select, .dir {
 .senha-acoes { display: flex; gap: 10px; }
 .senha-acoes .btn { flex: 1; height: 44px; }
 @media (max-width: 640px) {
-  .srow { grid-template-columns: 40px minmax(0, 1fr); grid-template-areas: "thumb info" "thumb status" "thumb step"; gap: 8px 10px; }
-  .sthumb { grid-area: thumb; width: 40px; height: 54px; align-self: start; }
+  .srow { grid-template-columns: 72px minmax(0, 1fr); grid-template-areas: "thumb info" "thumb status" "thumb step"; gap: 8px 10px; }
+  .sthumb { grid-area: thumb; width: 72px; height: 100px; align-self: start; }
   .sinfo { grid-area: info; }
   .sstatus { grid-area: status; }
   .sstep { grid-area: step; }
