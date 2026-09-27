@@ -65,8 +65,17 @@ export default function FilterBar({ tab, filters, onChange, onOpenDrawer, onClea
           </button>
         )}
       </div>
-      {tab === "deck" && (
-        <div className="sort">
+      <div className="sort">
+        <label className="search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
+          <span className="sr-only">Buscar por nome</span>
+          <input type="search" value={filters.q} onChange={(e) => onChange({ ...filters, q: e.target.value })} placeholder="Nome do Anime" autoComplete="off" />
+        </label>
+        {tab === "deck" && (
+          <>
           <label>
             <span className="muted">SORT ›</span>
             <select value={sortKey} onChange={(e) => onSort(e.target.value as SortKey, sortAsc)}>
@@ -79,8 +88,9 @@ export default function FilterBar({ tab, filters, onChange, onOpenDrawer, onClea
             {sortAsc ? "↑ CRESC." : "↓ DECRESC."}
           </button>
           <span className="muted">{fmtInt(count)} ANIMES</span>
-        </div>
-      )}
+          </>
+        )}
+      </div>
     </section>
   );
 }

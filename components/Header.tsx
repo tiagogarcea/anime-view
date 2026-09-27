@@ -2,9 +2,9 @@
 
 import type { Tab } from "./App";
 
-type Props = { tab: Tab; onTab: (t: Tab) => void; query: string; onQuery: (q: string) => void };
+type Props = { tab: Tab; onTab: (t: Tab) => void };
 
-export default function Header({ tab, onTab, query, onQuery }: Props) {
+export default function Header({ tab, onTab }: Props) {
   return (
     <header className="top">
       <div className="brand">
@@ -24,20 +24,10 @@ export default function Header({ tab, onTab, query, onQuery }: Props) {
         <button type="button" className={tab === "stats" ? "tab on" : "tab"} onClick={() => onTab("stats")}>
           [ STATS ]
         </button>
+        <button type="button" className={tab === "temporada" ? "tab on" : "tab"} onClick={() => onTab("temporada")}>
+          [ TEMPORADA ]
+        </button>
       </nav>
-      <label className="search">
-        <span className="search-caret" aria-hidden>
-          &gt;
-        </span>
-        <span className="sr-only">Buscar por nome</span>
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => onQuery(e.target.value)}
-          placeholder="buscar_titulo --jp --en"
-          autoComplete="off"
-        />
-      </label>
       <div className="sync">
         SYNC ● <b>ONLINE</b>
         <br />

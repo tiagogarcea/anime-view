@@ -13,6 +13,8 @@
   --gold: #f7d774;
   --violet: #9d7bff;
   --gray: #4a4a5e;
+  --green: #3ddc84;
+  --blue: #4d9bff;
 
   --t-SSR: var(--gold);
   --t-SR: var(--red);
@@ -70,14 +72,14 @@ button { cursor: pointer; }
 .tab:hover { color: var(--text); }
 .tab.on { border-color: var(--red); color: var(--red); }
 .search {
-  margin-left: auto; display: flex; align-items: center; gap: 10px;
-  width: min(340px, 100%); height: 44px; padding: 0 14px;
-  border: 1px solid var(--line); background: var(--panel); font-size: 13px;
+  display: flex; align-items: center; gap: 8px;
+  width: 240px; max-width: 100%; height: 36px; padding: 0 12px;
+  border: 1px solid var(--line-2); background: var(--panel); font-size: 13px; color: var(--muted);
 }
 .search:focus-within { border-color: var(--cyan); }
 .search-caret { color: var(--cyan); }
-.search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; }
-.sync { font-size: 11px; color: var(--muted); line-height: 1.6; text-align: right; }
+.search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); }
+.sync { margin-left: auto; font-size: 11px; color: var(--muted); line-height: 1.6; text-align: right; }
 .sync b { color: var(--cyan); font-weight: 400; }
 
 /* ── Botões ───────────────────────────────────────────── */
@@ -171,7 +173,7 @@ button { cursor: pointer; }
 .chip.add { border: 1px dashed var(--line-2); color: var(--soft); }
 .chip.add:hover { border-color: var(--cyan); color: var(--cyan); background: none; }
 .chip.ghost { border-color: transparent; color: var(--muted); text-decoration: underline; }
-.sort { display: flex; align-items: center; gap: 10px; }
+.sort { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto; }
 .sort label { display: flex; align-items: center; gap: 8px; }
 select, .dir {
   height: 36px; padding: 0 10px; border: 1px solid var(--line-2); background: var(--panel); font-size: 13px;
@@ -365,7 +367,8 @@ select, .dir {
   .poster.hero-poster { height: auto; }
   .two { grid-template-columns: 1fr; }
   .sync { display: none; }
-  .search { margin-left: 0; width: 100%; order: 3; }
+  .sort { margin-left: 0; width: 100%; }
+  .search { flex: 1; width: auto; }
   .modal-in { flex-direction: column; }
   .modal-art { width: 180px; }
 }
@@ -391,3 +394,58 @@ select, .dir {
 .views-list li { padding: 4px 10px; border: 1px solid var(--line-2); font-size: 12px; color: var(--soft); }
 .views-list li b { color: var(--text); font-weight: 500; margin-right: 4px; }
 .views-list li.rw { border-color: var(--cyan); color: var(--cyan); }
+
+/* ── Temporada atual ──────────────────────────────────── */
+.season { margin-top: 12px; }
+.season-count { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; margin-left: auto; }
+.season-count i { font-style: normal; font-weight: 700; margin-right: 4px; }
+.st-ok i { color: var(--green); } .st-late i { color: var(--red); } .st-pre i { color: var(--blue); }
+.season-aviso { margin-bottom: 14px; padding: 10px 14px; border: 1px solid var(--gold); color: var(--gold); font-size: 13px; }
+.day { margin-bottom: 22px; }
+.day-name { font-family: var(--display); font-size: 15px; font-weight: 700; letter-spacing: 2px; color: var(--muted); padding: 0 0 8px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.day.today .day-name { color: var(--cyan); border-bottom-color: var(--cyan); }
+.day-name span { font-size: 12px; letter-spacing: 1px; }
+.srow {
+  display: grid; grid-template-columns: 40px 44px minmax(0, 1fr) auto auto; align-items: center; gap: 14px;
+  padding: 8px 14px 8px 8px; margin-bottom: 6px; border: 1px solid var(--line); background: var(--panel);
+  transition: background 0.2s, border-color 0.2s;
+}
+.srow.s-ok { background: rgba(61, 220, 132, 0.09); border-color: rgba(61, 220, 132, 0.45); }
+.sicon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; border: 1px solid currentColor; }
+.s-ok .sicon { color: var(--green); }
+.s-late .sicon { color: var(--red); }
+.s-pre .sicon { color: var(--blue); }
+.s-unknown .sicon { color: var(--muted); }
+.sthumb { width: 44px; height: 60px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-size: 22px; color: rgba(255,255,255,0.35); border: 1px solid var(--line-2); }
+.sthumb img { width: 100%; height: 100%; object-fit: cover; }
+.sname { font-family: var(--display); font-size: 15px; font-weight: 600; text-transform: uppercase; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.smeta { font-size: 12px; color: var(--soft); margin-top: 3px; }
+.s-late .smeta { color: #ff8a93; }
+.s-ok .smeta { color: var(--green); }
+.saving { color: var(--gold); }
+.sstep { display: flex; align-items: center; }
+.sstep button { width: 34px; height: 36px; border: 1px solid var(--line-2); background: var(--bg); color: var(--text); font-size: 18px; }
+.sstep button:hover:not(:disabled) { border-color: var(--cyan); color: var(--cyan); }
+.sstep button:disabled { opacity: 0.35; cursor: default; }
+.sstep input {
+  width: 56px; height: 36px; border: 1px solid var(--line-2); border-left: 0; border-right: 0; background: var(--bg);
+  color: var(--text); text-align: center; font-family: var(--display); font-size: 17px; font-weight: 700; -moz-appearance: textfield;
+}
+.sstep input::-webkit-outer-spin-button, .sstep input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.scatch { height: 36px; padding: 0 12px; border: 1px solid var(--green); background: transparent; color: var(--green); font-size: 12px; font-weight: 700; letter-spacing: 1px; white-space: nowrap; }
+.scatch:hover { background: rgba(61, 220, 132, 0.12); }
+.season-nota { margin-top: 18px; }
+.senha { width: min(360px, 100%); padding: 24px; background: var(--bg); border: 1px solid var(--line-2); display: flex; flex-direction: column; gap: 12px; }
+.senha h2 { margin: 0; font-family: var(--display); letter-spacing: 1px; }
+.senha p { margin: 0; }
+.senha input { width: 100%; height: 42px; padding: 0 12px; border: 1px solid var(--line-2); background: var(--panel); }
+.senha-acoes { display: flex; gap: 10px; }
+.senha-acoes .btn { flex: 1; height: 44px; }
+@media (max-width: 640px) {
+  .srow { grid-template-columns: 32px 40px minmax(0, 1fr); gap: 10px; }
+  .sicon { width: 28px; height: 28px; font-size: 15px; }
+  .sthumb { width: 40px; height: 54px; }
+  .sname { white-space: normal; }
+  .sstep, .scatch { grid-column: 2 / -1; }
+  .season-count { margin-left: 0; }
+}

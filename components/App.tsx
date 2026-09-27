@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Anime } from "@/lib/types";
 import type { Viewing } from "@/lib/history";
+import type { SeasonItem } from "@/lib/temporada";
+import Season from "./Season";
 import { applyFilters, DEFAULT_SORT, EMPTY_FILTERS, Filters, sortRows, SortKey } from "@/lib/filters";
 import { suggest } from "@/lib/suggest";
 import Header from "./Header";
@@ -14,9 +16,9 @@ import Collection from "./Collection";
 import DetailModal from "./DetailModal";
 import Stats from "./Stats";
 
-export type Tab = "deck" | "stats";
+export type Tab = "deck" | "stats" | "temporada";
 
-export default function App({ animes, history }: { animes: Anime[]; history: Viewing[] }) {
+export default function App({ animes, history, temporada }: { animes: Anime[]; history: Viewing[]; temporada: SeasonItem[] }) {
   const [tab, setTab] = useState<Tab>("deck");
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [sortKey, setSortKey] = useState<SortKey>(DEFAULT_SORT.key);
@@ -42,31 +44,38 @@ export default function App({ animes, history }: { animes: Anime[]; history: Vie
 
   return (
     <div className="shell">
-      <Header tab={tab} onTab={setTab} query={filters.q} onQuery={(q) => setFilters({ ...filters, q })} />
+      <Header tab={tab} onTab={setTab} />
 
       {tab === "deck" && <Hero anime={pick} onReroll={reroll} onOpen={setOpen} poolSize={result.rows.length} />}
 
-      <KpiStrip rows={result.rows} total={animes.length} showRarity={tab === "deck"} />
-
-      <FilterBar
-        tab={tab}
-        filters={filters}
-        onChange={setFilters}
-        onOpenDrawer={() => setDrawer(true)}
-        onClear={clearAll}
-        count={rows.length}
-        sortKey={sortKey}
-        sortAsc={sortAsc}
-        onSort={(k, asc) => {
-          setSortKey(k);
-          setSortAsc(asc);
-        }}
-      />
-
-      {tab === "deck" ? (
-        <Collection rows={rows} onOpen={setOpen} onClear={clearAll} />
+      {tab === "temporada" ? (
+        <Season items={temporada} />
       ) : (
-        <Stats rows={result.rows} history={history} onOpen={setOpen} />
+        <>
+        <KpiStrip rows={result.rows} total={animes.length} showRarity={tab === "deck"} />
+
+        <FilterBar
+          tab={tab}
+          filters={filters}
+          onChange={setFilters}
+          onOpenDrawer={() => setDrawer(true)}
+          onClear={clearAll}
+          count={rows.length}
+          sortKey={sortKey}
+          sortAsc={sortAsc}
+          onSort={(k, asc) => {
+            setSortKey(k);
+            setSortAsc(asc);
+          }}
+        />
+
+        {tab === "deck" ? (
+          <Collection rows={rows} onOpen={setOpen} onClear={clearAll} />
+        ) : (
+          <Stats rows={result.rows} history={history} onOpen={setOpen} />
+        )}
+
+        </>
       )}
 
       <footer className="foot">
