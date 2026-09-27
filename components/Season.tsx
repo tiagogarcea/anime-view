@@ -186,7 +186,10 @@ function Linha({ item, hoje, estado, onEpisodio, onSemanal }: {
   if (item.inicio) partes.push(`${!hoje ? "início" : item.inicio > hoje ? "estreia" : "estreou"} ${fmtDate(item.inicio)}`);
   else partes.push("sem data de início");
   partes.push(item.ultimoEp ? `EP ${item.ultimoEp} visto` : "nenhum visto");
-  if (item.lancados !== null || item.total !== null) {
+  if (item.total && item.ultimoEp !== null && item.ultimoEp >= item.total) {
+    // completo: não volta para ✕ na virada da semana
+    partes.push("completo");
+  } else if (item.lancados !== null || item.total !== null) {
     partes.push(`${item.lancados ?? "?"} de ${item.total ?? "?"} lançados`);
   }
 

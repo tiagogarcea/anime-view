@@ -15,9 +15,10 @@
  * POST → { senha, numero, episodio } grava o episódio na coluna "Último episódio visto";
  *        { senha, numero, semanal: "V" | "X" | "-" | "" } grava o status na coluna "Semanal".
  *
- * Troca automática "-" → "X" na semana da estreia (semana começa na segunda):
- *   depois de colar esta versão, escolha a função "instalarGatilho" no topo do editor e clique
- *   em Executar uma vez. Ela cria um gatilho que roda "atualizarEstreias" todo dia às 6h.
+ * Mudanças automáticas de status (ver atualizarEstreias): "-" → "X" na semana da estreia e,
+ *   toda segunda, "V" → "X" (menos quem já completou todos os episódios).
+ *   Para ligar: escolha a função "instalarGatilho" no topo do editor e clique em Executar uma vez.
+ *   Ela cria um gatilho que roda "atualizarEstreias" todo dia às 6h.
  *
  * Para atualizar o código mantendo a mesma URL: Implantar › Gerenciar implantações ›
  * lápis (editar) › Versão: "Nova versão" › Implantar.
@@ -29,6 +30,7 @@ const COL_IMAGEM = "Imagem";
 const COL_EPISODIO = "Último episódio visto";
 const COL_SEMANAL = "Semanal";
 const COL_INICIO = "Dia de inicio";
+const COL_NOME = "Anime";
 const SEMANAL_VALIDOS = ["V", "X", "-", ""];
 
 function doGet() {
@@ -88,24 +90,86 @@ function doPost(e) {
 }
 
 /**
- * Única mudança automática de status: marcado "-" (não estreou) e já chegou a semana da
- * estreia (de segunda a domingo) → vira "X" (episódio não visto). Roda pelo gatilho diário.
+ * Mudanças automáticas de status (roda todo dia pelo gatilho das 6h):
+ * 1. "-" (não estreou) → "X" quando chega a semana da estreia (semana começa na segunda).
+ * 2. Uma vez por semana (na primeira execução a partir de segunda): todo "V" → "X", porque sai
+ *    episódio novo — exceto quem já completou (Último episódio visto >= total de episódios do AniList).
  */
 function atualizarEstreias() {
   const { sheet, values, header } = lerAba();
   const cIni = coluna(values[header], COL_INICIO);
   const cSem = coluna(values[header], COL_SEMANAL);
+  const cEp = coluna(values[header], COL_EPISODIO);
+  const cNome = coluna(values[header], COL_NOME);
   if (cIni < 0 || cSem < 0) return;
+
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
+  const semanaAtual = isoDia(segundaDe(hoje));
+  const props = PropertiesService.getScriptProperties();
+  const ultima = props.getProperty("ULTIMA_VIRADA");
+  // primeira execução: só registra a semana atual, para não desmarcar os ✓ da semana em curso
+  if (!ultima) props.setProperty("ULTIMA_VIRADA", semanaAtual);
+  const viraSemana = !!ultima && ultima !== semanaAtual;
+
   for (let r = header + 1; r < values.length; r++) {
+    const status = String(values[r][cSem]).trim().toUpperCase();
     const inicio = values[r][cIni];
-    if (String(values[r][cSem]).trim() !== "-" || !(inicio instanceof Date)) continue;
-    const segunda = new Date(inicio);
-    segunda.setHours(0, 0, 0, 0);
-    segunda.setDate(segunda.getDate() - ((segunda.getDay() + 6) % 7));
-    if (hoje >= segunda) sheet.getRange(r + 1, cSem + 1).setValue("X");
+
+    if (status === "-" && inicio instanceof Date && hoje >= segundaDe(inicio)) {
+      sheet.getRange(r + 1, cSem + 1).setValue("X");
+    } else if (status === "V" && viraSemana) {
+      const visto = Number(values[r][cEp]) || 0;
+      const total = cNome >= 0 ? totalEpisodios(String(values[r][cNome]).trim(), inicio) : null;
+      if (!(total && visto >= total)) sheet.getRange(r + 1, cSem + 1).setValue("X");
+    }
   }
+  if (viraSemana) props.setProperty("ULTIMA_VIRADA", semanaAtual);
+}
+
+function segundaDe(data) {
+  const d = new Date(data);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d;
+}
+
+function isoDia(d) {
+  return Utilities.formatDate(d, Session.getScriptTimeZone(), "yyyy-MM-dd");
+}
+
+/** Total de episódios pelo AniList; só aceita o resultado cuja estreia fica a até 30 dias da planilha. */
+function totalEpisodios(nome, inicio) {
+  const buscas = [nome];
+  const m = nome.match(/^(.*?)\s+(II|III|IV)$/);
+  if (m) {
+    const n = { II: "2", III: "3", IV: "4" }[m[2]];
+    buscas.push(m[1] + " " + n, m[1] + " " + n + (n === "2" ? "nd" : n === "3" ? "rd" : "th") + " Season");
+  }
+  const query = "query($s:String){Page(perPage:5){media(search:$s,type:ANIME,sort:SEARCH_MATCH){episodes startDate{year month day}}}}";
+  for (let i = 0; i < buscas.length; i++) {
+    try {
+      const resp = UrlFetchApp.fetch("https://graphql.anilist.co", {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify({ query: query, variables: { s: buscas[i] } }),
+        muteHttpExceptions: true,
+      });
+      const media = (((JSON.parse(resp.getContentText()) || {}).data || {}).Page || {}).media || [];
+      for (let k = 0; k < media.length; k++) {
+        const sd = media[k].startDate;
+        if (!(inicio instanceof Date)) return media[k].episodes;
+        if (sd && sd.year && sd.month) {
+          const estreia = new Date(sd.year, sd.month - 1, sd.day || 1);
+          if (Math.abs(estreia - inicio) / 86400000 <= 30) return media[k].episodes;
+        }
+      }
+    } catch (err) {
+      /* sem AniList: trata como não completo */
+    }
+    Utilities.sleep(700);
+  }
+  return null;
 }
 
 /** Rode uma vez pelo editor: cria o gatilho diário (6h) de atualizarEstreias, sem duplicar. */
