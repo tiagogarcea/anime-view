@@ -15,6 +15,10 @@
  * POST → { senha, numero, episodio } grava o episódio na coluna "Último episódio visto";
  *        { senha, numero, semanal: "V" | "X" | "-" | "" } grava o status na coluna "Semanal".
  *
+ * Troca automática "-" → "X" na semana da estreia (semana começa na segunda):
+ *   depois de colar esta versão, escolha a função "instalarGatilho" no topo do editor e clique
+ *   em Executar uma vez. Ela cria um gatilho que roda "atualizarEstreias" todo dia às 6h.
+ *
  * Para atualizar o código mantendo a mesma URL: Implantar › Gerenciar implantações ›
  * lápis (editar) › Versão: "Nova versão" › Implantar.
  */
@@ -24,6 +28,7 @@ const COL_NUMERO = "Número";
 const COL_IMAGEM = "Imagem";
 const COL_EPISODIO = "Último episódio visto";
 const COL_SEMANAL = "Semanal";
+const COL_INICIO = "Dia de inicio";
 const SEMANAL_VALIDOS = ["V", "X", "-", ""];
 
 function doGet() {
@@ -80,6 +85,36 @@ function doPost(e) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/**
+ * Única mudança automática de status: marcado "-" (não estreou) e já chegou a semana da
+ * estreia (de segunda a domingo) → vira "X" (episódio não visto). Roda pelo gatilho diário.
+ */
+function atualizarEstreias() {
+  const { sheet, values, header } = lerAba();
+  const cIni = coluna(values[header], COL_INICIO);
+  const cSem = coluna(values[header], COL_SEMANAL);
+  if (cIni < 0 || cSem < 0) return;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  for (let r = header + 1; r < values.length; r++) {
+    const inicio = values[r][cIni];
+    if (String(values[r][cSem]).trim() !== "-" || !(inicio instanceof Date)) continue;
+    const segunda = new Date(inicio);
+    segunda.setHours(0, 0, 0, 0);
+    segunda.setDate(segunda.getDate() - ((segunda.getDay() + 6) % 7));
+    if (hoje >= segunda) sheet.getRange(r + 1, cSem + 1).setValue("X");
+  }
+}
+
+/** Rode uma vez pelo editor: cria o gatilho diário (6h) de atualizarEstreias, sem duplicar. */
+function instalarGatilho() {
+  ScriptApp.getProjectTriggers()
+    .filter(function (t) { return t.getHandlerFunction() === "atualizarEstreias"; })
+    .forEach(function (t) { ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger("atualizarEstreias").timeBased().everyDays(1).atHour(6).create();
+  atualizarEstreias();
 }
 
 function lerAba() {

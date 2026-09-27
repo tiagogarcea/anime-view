@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { DIAS, hojeDia, Semanal, SeasonItem } from "@/lib/temporada";
+import { DIAS, hojeDia, Semanal, SeasonItem, semanalEfetivo } from "@/lib/temporada";
 import { fmtDate, hueOf } from "@/lib/format";
 
 const SENHA_KEY = "anime-view-senha";
@@ -86,9 +86,10 @@ export default function Season({ items }: { items: SeasonItem[] }) {
     }
   }
 
-  const lista = useMemo(() => items.map((i) => ({ ...i, ultimoEp: valor(i.numero).ep, semanal: valor(i.numero).sem })),
+  // semanalEfetivo: "-" vira "X" sozinho quando chega a semana da estreia
+  const lista = useMemo(() => items.map((i) => ({ ...i, ultimoEp: valor(i.numero).ep, semanal: semanalEfetivo({ semanal: valor(i.numero).sem, inicio: i.inicio }, hoje) })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [items, vals]);
+    [items, vals, hoje]);
   const contagem = useMemo(() => {
     const c = { V: 0, X: 0, "-": 0, "": 0 };
     for (const i of lista) c[i.semanal]++;

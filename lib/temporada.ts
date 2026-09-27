@@ -160,6 +160,23 @@ export async function loadTemporada(): Promise<SeasonItem[]> {
   }
 }
 
+/** Segunda-feira da semana de uma data AAAA-MM-DD (a semana começa na segunda). */
+export function segundaDa(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() - ((dt.getUTCDay() + 6) % 7));
+  return dt.toISOString().slice(0, 10);
+}
+
+/**
+ * Status que a tela mostra. Única exceção automática: marcado "-" (não estreou) e já chegou a
+ * semana da estreia → vira "X" (episódio não visto). Os outros status são sempre os da planilha.
+ */
+export function semanalEfetivo(item: Pick<SeasonItem, "semanal" | "inicio">, hoje: string): Semanal {
+  if (item.semanal === "-" && item.inicio && hoje && hoje >= segundaDa(item.inicio)) return "X";
+  return item.semanal;
+}
+
 export const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 /** Índice em DIAS do dia de hoje (getDay: 0 = domingo). */
 export const hojeDia = (now = new Date()) => (now.getDay() + 6) % 7;
