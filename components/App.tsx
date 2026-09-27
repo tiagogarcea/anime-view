@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Anime } from "@/lib/types";
-import { applyFilters, EMPTY_FILTERS, Filters, sortRows, SortKey } from "@/lib/filters";
+import { applyFilters, DEFAULT_SORT, EMPTY_FILTERS, Filters, sortRows, SortKey } from "@/lib/filters";
 import { suggest } from "@/lib/suggest";
 import Header from "./Header";
 import Hero from "./Hero";
@@ -18,8 +18,8 @@ export type Tab = "deck" | "stats";
 export default function App({ animes }: { animes: Anime[] }) {
   const [tab, setTab] = useState<Tab>("deck");
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
-  const [sortKey, setSortKey] = useState<SortKey>("n");
-  const [sortAsc, setSortAsc] = useState(true);
+  const [sortKey, setSortKey] = useState<SortKey>(DEFAULT_SORT.key);
+  const [sortAsc, setSortAsc] = useState(DEFAULT_SORT.asc);
   const [drawer, setDrawer] = useState(false);
   const [pick, setPick] = useState<Anime | null>(null);
   const [open, setOpen] = useState<Anime | null>(null);
@@ -35,8 +35,8 @@ export default function App({ animes }: { animes: Anime[] }) {
   const reroll = () => setPick(suggest(result.rows, pick?.id));
   const clearAll = () => {
     setFilters(EMPTY_FILTERS);
-    setSortKey("n");
-    setSortAsc(true);
+    setSortKey(DEFAULT_SORT.key);
+    setSortAsc(DEFAULT_SORT.asc);
   };
 
   return (

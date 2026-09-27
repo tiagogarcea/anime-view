@@ -101,11 +101,11 @@ export function activeCount(f: Filters): number {
 export type SortKey = "n" | "nome" | "score" | "eps" | "lastSeen" | "ano" | "studio";
 
 export const SORTS: { key: SortKey; label: string }[] = [
-  { key: "n", label: "N° (padrão)" },
+  { key: "n", label: "N°" },
   { key: "nome", label: "Nome" },
   { key: "score", label: "Score" },
   { key: "eps", label: "Episódios" },
-  { key: "lastSeen", label: "Visto em" },
+  { key: "lastSeen", label: "Visto em (padrão)" },
   { key: "ano", label: "Ano" },
   { key: "studio", label: "Estúdio" },
 ];
@@ -133,3 +133,6 @@ export function sortRows(rows: Anime[], key: SortKey, asc: boolean): Anime[] {
     return (asc ? c : -c) || a.n - b.n;
   });
 }
+
+/** Ordem ao abrir o site e ao limpar os filtros: vistos mais recentemente primeiro. */
+export const DEFAULT_SORT: { key: SortKey; asc: boolean } = { key: "lastSeen", asc: false };

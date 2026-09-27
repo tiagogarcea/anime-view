@@ -32,7 +32,7 @@ Variável opcional: `SHEET_CSV_URL` sobrescreve a URL da planilha (`lib/sheet.ts
 | Season, Ano, Estúdio, Gênero, Tema, Demografia, Favorito, Rewatched | Mesmos filtros, em cascata como antes, com contagem por opção |
 | — | Novo: filtro por raridade (SSR/SR/R/N) |
 | Limpar todos os filtros | "limpar tudo" na barra e na gaveta |
-| Ordenar por N°, Nome, Score, Episódios, Visto em, Ano, Studio + crescente/decrescente | Igual, na barra e na gaveta |
+| Ordenar por N°, Nome, Score, Episódios, Visto em, Ano, Studio + crescente/decrescente | Igual, na barra e na gaveta; padrão agora é "Visto em" decrescente |
 | Cards com capa, score, favorito, rewatch; overlay com detalhes, comentário, MAL, Crunchyroll | Cartas com moldura por raridade; clique abre modal com tudo isso + streaming |
 | Sugestão do Dia (sorteio ponderado) | "Puxada do dia" no topo, mesma regra de peso, sobre os filtros atuais |
 | Empty state | Igual |
