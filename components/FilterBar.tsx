@@ -28,6 +28,12 @@ export default function FilterBar({ tab, filters, onChange, onOpenDrawer, onClea
       remove: () => onChange({ ...filters, scoreMin: null, scoreMax: null }),
     });
   }
+  if (filters.epsMin !== null || filters.epsMax !== null) {
+    chips.push({
+      label: `eps ${filters.epsMin ?? "…"}–${filters.epsMax ?? "…"}`,
+      remove: () => onChange({ ...filters, epsMin: null, epsMax: null }),
+    });
+  }
   if (filters.from || filters.to) {
     chips.push({
       label: `visto ${filters.from ? fmtDate(filters.from) : "…"} → ${filters.to ? fmtDate(filters.to) : "…"}`,

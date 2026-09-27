@@ -6,6 +6,8 @@ export type Filters = {
   q: string;
   scoreMin: number | null;
   scoreMax: number | null;
+  epsMin: number | null;
+  epsMax: number | null;
   from: string;
   to: string;
 } & Record<MultiKey, string[]>;
@@ -14,6 +16,8 @@ export const EMPTY_FILTERS: Filters = {
   q: "",
   scoreMin: null,
   scoreMax: null,
+  epsMin: null,
+  epsMax: null,
   from: "",
   to: "",
   season: [],
@@ -45,6 +49,8 @@ export type Option = { value: string; count: number };
 export type FilterResult = {
   rows: Anime[];
   scoreBounds: [number, number] | null;
+  /** contagens de episódios que existem na seleção, em ordem (o slider anda por elas) */
+  epsValues: number[];
   dateBounds: [string, string] | null;
   options: Record<MultiKey, Option[]>;
 };
@@ -74,6 +80,10 @@ export function applyFilters(all: Anime[], f: Filters): FilterResult {
   if (f.scoreMin !== null) pool = pool.filter((a) => a.score >= f.scoreMin!);
   if (f.scoreMax !== null) pool = pool.filter((a) => a.score <= f.scoreMax!);
 
+  const epsValues = [...new Set(pool.map((a) => a.eps).filter((e) => e > 0))].sort((a, b) => a - b);
+  if (f.epsMin !== null) pool = pool.filter((a) => a.eps >= f.epsMin!);
+  if (f.epsMax !== null) pool = pool.filter((a) => a.eps <= f.epsMax!);
+
   const dates = pool.map((a) => a.lastSeen).filter((d): d is string => !!d).sort();
   const dateBounds: [string, string] | null = dates.length ? [dates[0], dates[dates.length - 1]] : null;
   // Só filtra por data quando o usuário mexeu no intervalo; animes sem data continuam na lista.
@@ -87,13 +97,14 @@ export function applyFilters(all: Anime[], f: Filters): FilterResult {
     if (sel.length) pool = pool.filter((a) => sel.includes(get(a)));
   }
 
-  return { rows: pool, scoreBounds, dateBounds, options };
+  return { rows: pool, scoreBounds, epsValues, dateBounds, options };
 }
 
 export function activeCount(f: Filters): number {
   let n = MULTI.reduce((acc, { key }) => acc + (f[key].length ? 1 : 0), 0);
   if (f.q.trim()) n++;
   if (f.scoreMin !== null || f.scoreMax !== null) n++;
+  if (f.epsMin !== null || f.epsMax !== null) n++;
   if (f.from || f.to) n++;
   return n;
 }

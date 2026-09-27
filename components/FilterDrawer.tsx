@@ -81,6 +81,42 @@ export default function FilterDrawer({ open, onClose, filters, onChange, result,
             </fieldset>
           )}
 
+          {result.epsValues.length > 1 && (() => {
+            // o slider anda pelas contagens que existem (1, 2, … 12, 13, 24 … 500), não de 1 em 1
+            const vals = result.epsValues;
+            const last = vals.length - 1;
+            const idxDe = (v: number | null, fallback: number) => {
+              if (v === null) return fallback;
+              const i = vals.findIndex((x) => x >= v);
+              return i < 0 ? last : i;
+            };
+            const iLo = idxDe(filters.epsMin, 0);
+            const iHi = filters.epsMax === null ? last : Math.max(iLo, vals.findLastIndex((x) => x <= filters.epsMax!));
+            return (
+              <fieldset className="fgroup">
+                <legend>EPISÓDIOS <span className="cyan">{vals[iLo]} – {vals[iHi]}</span></legend>
+                <div className="dual">
+                  <input
+                    type="range" min={0} max={last} step={1} value={iLo} aria-label="Mínimo de episódios"
+                    aria-valuetext={`${vals[iLo]} episódios`}
+                    onChange={(e) => {
+                      const i = Math.min(Number(e.target.value), iHi);
+                      onChange({ ...filters, epsMin: i === 0 ? null : vals[i] });
+                    }}
+                  />
+                  <input
+                    type="range" min={0} max={last} step={1} value={iHi} aria-label="Máximo de episódios"
+                    aria-valuetext={`${vals[iHi]} episódios`}
+                    onChange={(e) => {
+                      const i = Math.max(Number(e.target.value), iLo);
+                      onChange({ ...filters, epsMax: i === last ? null : vals[i] });
+                    }}
+                  />
+                </div>
+              </fieldset>
+            );
+          })()}
+
           {result.dateBounds && (
             <fieldset className="fgroup">
               <legend>VISTO ENTRE</legend>
