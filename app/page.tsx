@@ -1,13 +1,14 @@
 import App from "@/components/App";
 import { loadAnimes } from "@/lib/sheet";
+import { loadHistory } from "@/lib/history";
 
 // Relê a planilha no máximo a cada 60 s.
 export const revalidate = 60;
 
 export default async function Page() {
   try {
-    const animes = await loadAnimes();
-    return <App animes={animes} />;
+    const [animes, history] = await Promise.all([loadAnimes(), loadHistory()]);
+    return <App animes={animes} history={history} />;
   } catch (e) {
     return (
       <main className="fatal">

@@ -2,14 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { Anime, Tier } from "@/lib/types";
-import { byDay, byMonth, byYear, Bucket, countBy, scoreDistribution, top, topRewatch } from "@/lib/stats";
+import { byDay, byMonthWithHistory, byYear, Bucket, countBy, HISTORY_START, scoreDistribution, top, topRewatch } from "@/lib/stats";
+import type { Viewing } from "@/lib/history";
 import { fmtDate, fmtMonth } from "@/lib/format";
 import Poster from "./Poster";
 
 const TIER_OF_SCORE = (s: number): Tier => (s >= 10 ? "SSR" : s >= 9 ? "SR" : s >= 8 ? "R" : "N");
 const CAT = ["var(--red)", "var(--cyan)", "var(--gold)", "var(--violet)", "var(--gray)"];
 
-export default function Stats({ rows, onOpen }: { rows: Anime[]; onOpen: (a: Anime) => void }) {
+export default function Stats({ rows, history, onOpen }: { rows: Anime[]; history: Viewing[]; onOpen: (a: Anime) => void }) {
   if (!rows.length) {
     return (
       <section className="empty">
@@ -39,8 +40,8 @@ export default function Stats({ rows, onOpen }: { rows: Anime[]; onOpen: (a: Ani
         </Panel>
       </div>
 
-      <Panel title="ASSISTIDOS AO LONGO DO TEMPO" note="// por mês">
-        <AreaChart data={byMonth(rows)} />
+      <Panel title="ASSISTIDOS AO LONGO DO TEMPO" note={history.length ? "// por mês · rewatches contam a partir de 2023" : "// por mês"}>
+        <AreaChart data={byMonthWithHistory(rows, history)} splitAt={history.length ? HISTORY_START : undefined} />
       </Panel>
 
       <div className="three">
@@ -152,7 +153,7 @@ function Bars({ data, color }: { data: Bucket[]; color: string }) {
   );
 }
 
-function AreaChart({ data }: { data: Bucket[] }) {
+function AreaChart({ data, splitAt }: { data: Bucket[]; splitAt?: string }) {
   const [hover, setHover] = useState<number | null>(null);
   if (data.length < 2) return <p className="muted small">Poucos meses com data para desenhar a linha.</p>;
   const W = 1000, H = 200, P = 6;
@@ -162,11 +163,14 @@ function AreaChart({ data }: { data: Bucket[] }) {
   const line = data.map((d, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(d.n).toFixed(1)}`).join(" ");
   const years = data.map((d, i) => ({ i, y: d.label.slice(0, 4), m: d.label.slice(5) })).filter((d) => d.m === "01" || d.i === 0);
   const h = hover !== null ? data[hover] : null;
+  // onde começa a aba Historico: antes dela só existe a última vez vista (Last seen)
+  const split = splitAt ? data.findIndex((d) => d.label >= splitAt) : -1;
+  const fonte = (label: string) => (split > 0 ? (label < splitAt! ? " · só a última vez vista" : " · todas as vezes, com rewatches") : "");
 
   return (
     <div className="area">
       <div className="area-readout">
-        {h ? <><b>{fmtMonth(h.label)}</b> · {h.n} anime{h.n === 1 ? "" : "s"}</> : <span className="muted">passe o mouse no gráfico</span>}
+        {h ? <><b>{fmtMonth(h.label)}</b> · {h.n} anime{h.n === 1 ? "" : "s"}<span className="muted">{fonte(h.label)}</span></> : <span className="muted">passe o mouse no gráfico</span>}
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="area-svg"
         onMouseLeave={() => setHover(null)}
@@ -175,12 +179,20 @@ function AreaChart({ data }: { data: Bucket[] }) {
           setHover(Math.round(((e.clientX - r.left) / r.width) * (data.length - 1)));
         }}>
         {[0.25, 0.5, 0.75].map((f) => <line key={f} x1={0} x2={W} y1={H * f} y2={H * f} className="gridline" />)}
+        {split > 0 && <rect x={0} y={0} width={x(split)} height={H} className="area-before" />}
+        {split > 0 && <line x1={x(split)} x2={x(split)} y1={0} y2={H} className="area-split" vectorEffect="non-scaling-stroke" />}
         <path d={`${line} L${W},${H} L0,${H} Z`} className="area-fill" />
         <path d={line} className="area-line" vectorEffect="non-scaling-stroke" />
         {hover !== null && (
           <line x1={x(hover)} x2={x(hover)} y1={0} y2={H} className="crosshair" vectorEffect="non-scaling-stroke" />
         )}
       </svg>
+      {split > 0 && (
+        <div className="area-legend">
+          <span><i className="lg-before" /> até dez/2022: última vez vista (Last seen)</span>
+          <span><i className="lg-after" /> desde jan/2023: cada vez que assistiu, pela aba Historico</span>
+        </div>
+      )}
       <div className="area-axis">
         {years.map((d) => (
           <span key={d.i} style={{ left: `${(d.i / (data.length - 1)) * 100}%` }}>{d.y}</span>

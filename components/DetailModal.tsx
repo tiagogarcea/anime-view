@@ -2,11 +2,14 @@
 
 import { useEffect } from "react";
 import { Anime } from "@/lib/types";
-import { fmtDate, fmtScore } from "@/lib/format";
+import { fmtDate, fmtMonth, fmtScore } from "@/lib/format";
+import type { Viewing } from "@/lib/history";
 import Poster from "./Poster";
 import { TierMark } from "./Card";
 
-export default function DetailModal({ anime, onClose }: { anime: Anime | null; onClose: () => void }) {
+const rewatchLabel = (r: number | null) => (r === null ? "" : r === 0 ? "primeira vez" : `${r}º rewatch`);
+
+export default function DetailModal({ anime, history, onClose }: { anime: Anime | null; history: Viewing[]; onClose: () => void }) {
   useEffect(() => {
     if (!anime) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -19,6 +22,7 @@ export default function DetailModal({ anime, onClose }: { anime: Anime | null; o
   }, [anime, onClose]);
 
   if (!anime) return null;
+  const views = history.filter((v) => v.n === anime.n).sort((a, b) => a.ym.localeCompare(b.ym));
 
   const rows: [string, string][] = [
     ["ESTÚDIO", anime.studio || "—"],
@@ -56,6 +60,18 @@ export default function DetailModal({ anime, onClose }: { anime: Anime | null; o
                 <div key={k}><dt>{k}</dt><dd>{v}</dd></div>
               ))}
             </dl>
+            {views.length > 0 && (
+              <div className="views">
+                <div className="views-title">HISTÓRICO <span className="muted">// desde 2023</span></div>
+                <ol className="views-list">
+                  {views.map((v, i) => (
+                    <li key={i} className={v.rewatch ? "rw" : ""}>
+                      <b>{fmtMonth(v.ym)}</b> {rewatchLabel(v.rewatch)}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
             {anime.comentario && <p className="hero-quote">// “{anime.comentario}”</p>}
             <div className="hero-actions">
               {anime.malUrl && <a className="btn line" href={anime.malUrl} target="_blank" rel="noreferrer">MAL ↗</a>}

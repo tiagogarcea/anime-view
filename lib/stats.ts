@@ -1,4 +1,5 @@
 import { Anime, Tier, TIERS } from "./types";
+import type { Viewing } from "./history";
 
 export type Kpis = {
   count: number;
@@ -67,6 +68,35 @@ export function byYear(rows: Anime[]): Bucket[] {
 export function byMonth(rows: Anime[]): Bucket[] {
   const m = new Map<string, number>();
   for (const a of rows) if (a.lastSeen) m.set(a.lastSeen.slice(0, 7), (m.get(a.lastSeen.slice(0, 7)) ?? 0) + 1);
+  if (!m.size) return [];
+  const keys = [...m.keys()].sort();
+  let [y, mo] = keys[0].split("-").map(Number);
+  const [ey, emo] = keys[keys.length - 1].split("-").map(Number);
+  const out: Bucket[] = [];
+  while (y < ey || (y === ey && mo <= emo)) {
+    const k = `${y}-${String(mo).padStart(2, "0")}`;
+    out.push({ label: k, n: m.get(k) ?? 0 });
+    mo++;
+    if (mo > 12) { mo = 1; y++; }
+  }
+  return out;
+}
+
+/** Mês em que começa a aba Historico; antes disso só existe o Last seen. */
+export const HISTORY_START = "2023-01";
+
+/**
+ * Assistidos por mês juntando as duas fontes:
+ * antes de 2023 conta o Last seen (última vez vista); de 2023 em diante conta cada vez
+ * registrada na aba Historico, rewatches incluídos. Só entram animes que passaram nos filtros.
+ */
+export function byMonthWithHistory(rows: Anime[], history: Viewing[]): Bucket[] {
+  if (!history.length) return byMonth(rows);
+  const m = new Map<string, number>();
+  const add = (k: string) => m.set(k, (m.get(k) ?? 0) + 1);
+  const ns = new Set(rows.map((a) => a.n));
+  for (const a of rows) if (a.lastSeen && a.lastSeen.slice(0, 7) < HISTORY_START) add(a.lastSeen.slice(0, 7));
+  for (const v of history) if (ns.has(v.n) && v.ym >= HISTORY_START) add(v.ym);
   if (!m.size) return [];
   const keys = [...m.keys()].sort();
   let [y, mo] = keys[0].split("-").map(Number);
