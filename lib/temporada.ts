@@ -55,7 +55,8 @@ export async function loadTemporada(): Promise<SeasonItem[]> {
         const r = await fetch(script, { next: { revalidate: 3600 } });
         const j = await r.json();
         const imgs = new Map<number, string>((j.itens ?? []).map((x: { numero: number; imagem: string }) => [Number(x.numero), x.imagem]));
-        for (const it of itens) it.img = imgs.get(it.numero) ?? "";
+        // o Google devolve a capa em 2048 px; 240 px sobra para a miniatura
+        for (const it of itens) it.img = (imgs.get(it.numero) ?? "").replace(/=s\d+(?=[?&]|$)/, "=s240");
       } catch {
         /* sem capas: o site mostra a inicial */
       }
