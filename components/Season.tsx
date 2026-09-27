@@ -6,6 +6,12 @@ import { fmtDate, hueOf } from "@/lib/format";
 
 const SENHA_KEY = "anime-view-senha";
 
+/** Data de hoje no navegador, AAAA-MM-DD. */
+const hojeIso = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
 type Valores = { ep: number | null; sem: Semanal };
 type Campo = "episodio" | "semanal";
 type Pedido = { numero: number; campo: Campo; novo: Valores; original: Valores };
@@ -33,8 +39,9 @@ export default function Season({ items }: { items: SeasonItem[] }) {
   const [pedirSenha, setPedirSenha] = useState<Pedido | null>(null);
   const [aviso, setAviso] = useState("");
   const [hojeIdx, setHojeIdx] = useState(-1);
+  const [hoje, setHoje] = useState("");
 
-  useEffect(() => { setSenha(lerSenha()); setHojeIdx(hojeDia()); }, []);
+  useEffect(() => { setSenha(lerSenha()); setHojeIdx(hojeDia()); setHoje(hojeIso()); }, []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => setVals(inicial()), [items]);
 
@@ -124,6 +131,7 @@ export default function Season({ items }: { items: SeasonItem[] }) {
             <Linha
               key={i.numero}
               item={i}
+              hoje={hoje}
               estado={estado.get(i.numero) ?? ""}
               onEpisodio={(ep) => salvar(i.numero, "episodio", { ep, sem: valor(i.numero).sem })}
               onSemanal={(sem) => salvar(i.numero, "semanal", { ep: valor(i.numero).ep, sem })}
@@ -152,8 +160,8 @@ export default function Season({ items }: { items: SeasonItem[] }) {
   );
 }
 
-function Linha({ item, estado, onEpisodio, onSemanal }: {
-  item: SeasonItem; estado: Estado; onEpisodio: (ep: number | null) => void; onSemanal: (s: Semanal) => void;
+function Linha({ item, hoje, estado, onEpisodio, onSemanal }: {
+  item: SeasonItem; hoje: string; estado: Estado; onEpisodio: (ep: number | null) => void; onSemanal: (s: Semanal) => void;
 }) {
   const [txt, setTxt] = useState(item.ultimoEp?.toString() ?? "");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -172,11 +180,14 @@ function Linha({ item, estado, onEpisodio, onSemanal }: {
   };
 
   const partes: string[] = [];
+  // data da coluna "Dia de inicio" sempre visível: "estreia" se ainda não chegou, "estreou" se já passou
+  // antes de o navegador saber a data de hoje, mostra só "início"
+  if (item.inicio) partes.push(`${!hoje ? "início" : item.inicio > hoje ? "estreia" : "estreou"} ${fmtDate(item.inicio)}`);
+  else partes.push("sem data de início");
   partes.push(item.ultimoEp ? `EP ${item.ultimoEp} visto` : "nenhum visto");
   if (item.lancados !== null || item.total !== null) {
     partes.push(`${item.lancados ?? "?"} de ${item.total ?? "?"} lançados`);
   }
-  if (item.lancados === 0 && item.inicio) partes.push(`estreia ${fmtDate(item.inicio)}`);
 
   return (
     <div className={`srow ${CLS[item.semanal]}`}>
