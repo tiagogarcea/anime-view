@@ -1,0 +1,93 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { Anime } from "@/lib/types";
+import { applyFilters, EMPTY_FILTERS, Filters, sortRows, SortKey } from "@/lib/filters";
+import { suggest } from "@/lib/suggest";
+import Header from "./Header";
+import Hero from "./Hero";
+import KpiStrip from "./KpiStrip";
+import FilterBar from "./FilterBar";
+import FilterDrawer from "./FilterDrawer";
+import Collection from "./Collection";
+import DetailModal from "./DetailModal";
+import Stats from "./Stats";
+
+export type Tab = "deck" | "stats";
+
+export default function App({ animes }: { animes: Anime[] }) {
+  const [tab, setTab] = useState<Tab>("deck");
+  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [sortKey, setSortKey] = useState<SortKey>("n");
+  const [sortAsc, setSortAsc] = useState(true);
+  const [drawer, setDrawer] = useState(false);
+  const [pick, setPick] = useState<Anime | null>(null);
+  const [open, setOpen] = useState<Anime | null>(null);
+
+  const result = useMemo(() => applyFilters(animes, filters), [animes, filters]);
+  const rows = useMemo(() => sortRows(result.rows, sortKey, sortAsc), [result.rows, sortKey, sortAsc]);
+
+  // Sorteio só no cliente (Math.random no servidor quebraria a hidratação).
+  useEffect(() => {
+    setPick(suggest(animes));
+  }, [animes]);
+
+  const reroll = () => setPick(suggest(result.rows, pick?.id));
+  const clearAll = () => {
+    setFilters(EMPTY_FILTERS);
+    setSortKey("n");
+    setSortAsc(true);
+  };
+
+  return (
+    <div className="shell">
+      <Header tab={tab} onTab={setTab} query={filters.q} onQuery={(q) => setFilters({ ...filters, q })} />
+
+      {tab === "deck" && <Hero anime={pick} onReroll={reroll} onOpen={setOpen} poolSize={result.rows.length} />}
+
+      <KpiStrip rows={result.rows} total={animes.length} showRarity={tab === "deck"} />
+
+      <FilterBar
+        tab={tab}
+        filters={filters}
+        onChange={setFilters}
+        onOpenDrawer={() => setDrawer(true)}
+        onClear={clearAll}
+        count={rows.length}
+        sortKey={sortKey}
+        sortAsc={sortAsc}
+        onSort={(k, asc) => {
+          setSortKey(k);
+          setSortAsc(asc);
+        }}
+      />
+
+      {tab === "deck" ? (
+        <Collection rows={rows} onOpen={setOpen} onClear={clearAll} />
+      ) : (
+        <Stats rows={result.rows} onOpen={setOpen} />
+      )}
+
+      <footer className="foot">
+        <span>ANIME//VIEW</span>
+        <span>fonte: Google Sheets · atualiza a cada 60 s</span>
+      </footer>
+
+      <FilterDrawer
+        open={drawer}
+        onClose={() => setDrawer(false)}
+        filters={filters}
+        onChange={setFilters}
+        result={result}
+        onClear={clearAll}
+        sortKey={sortKey}
+        sortAsc={sortAsc}
+        onSort={(k, asc) => {
+          setSortKey(k);
+          setSortAsc(asc);
+        }}
+      />
+      <DetailModal anime={open} onClose={() => setOpen(null)} />
+    </div>
+  );
+}
