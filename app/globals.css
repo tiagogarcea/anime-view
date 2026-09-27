@@ -59,7 +59,8 @@ button { cursor: pointer; }
   display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
   min-height: 80px; padding: 12px 0; border-bottom: 1px solid var(--line);
 }
-.brand { font-family: var(--display); font-size: 28px; font-weight: 700; letter-spacing: 2px; }
+.brand { display: flex; align-items: center; gap: 12px; font-family: var(--display); font-size: 28px; font-weight: 700; letter-spacing: 2px; }
+.brand-mark { width: 40px; height: 40px; flex-shrink: 0; border: 1px solid var(--line-2); border-radius: 9px; }
 .brand-slash { color: var(--red); }
 .tabs { display: flex; gap: 4px; }
 .tab {

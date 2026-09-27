@@ -41,7 +41,7 @@ export default function Collection({ rows, onOpen, onClear }: { rows: Anime[]; o
           <Card key={a.id} anime={a} onOpen={onOpen} />
         ))}
       </div>
-      {shown < rows.length && <div ref={sentinel} className="more">carregando mais cartas…</div>}
+      {shown < rows.length && <div ref={sentinel} className="more">carregando mais animes…</div>}
     </section>
   );
 }

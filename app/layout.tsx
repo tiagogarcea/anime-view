@@ -7,7 +7,7 @@ const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500", "700"],
 
 export const metadata: Metadata = {
   title: "Anime View · Tiago Garcéa",
-  description: "Coleção pessoal de animes: cartas, sorteio do dia e estatísticas.",
+  description: "Coleção pessoal de animes: lista, sorteio do dia e estatísticas.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -11,7 +11,7 @@ export default function KpiStrip({ rows, total, showRarity }: { rows: Anime[]; t
   const tiers = tierCounts(rows);
   const maxTier = Math.max(1, ...tiers.map((t) => t.n));
   const items = [
-    { label: "CARTAS", sub: rows.length === total ? "TOTAL" : `DE ${fmtInt(total)}`, value: fmtInt(k.count), fill: k.count / Math.max(1, total) },
+    { label: "ANIMES", sub: rows.length === total ? "TOTAL" : `DE ${fmtInt(total)}`, value: fmtInt(k.count), fill: k.count / Math.max(1, total) },
     { label: "SCORE MÉDIO", sub: "/10", value: k.avgScore.toFixed(2).replace(".", ","), fill: k.avgScore / 10 },
     { label: "TEMPO ASSISTIDO", sub: "+REWATCH", value: `${k.days}d ${k.hours}h`, fill: null },
     { label: "EPISÓDIOS", sub: `↻ ${fmtInt(k.epsRewatch)} REWATCH`, value: fmtInt(k.eps), fill: k.eps ? (k.eps - k.epsRewatch) / k.eps : 0 },
@@ -35,7 +35,7 @@ export default function KpiStrip({ rows, total, showRarity }: { rows: Anime[]; t
       ))}
       {showRarity && (
         <div className="kpi rarity">
-          <div className="kpi-head"><span>RARIDADE DO DECK</span></div>
+          <div className="kpi-head"><span>RARIDADE DA LISTA</span></div>
           {tiers.map((t) => (
             <div className="rarity-row" key={t.tier} title={`${t.tier}: ${TIER_LABEL[t.tier]}`}>
               <span className={`tier-name t-${t.tier}`}>{t.tier}</span>

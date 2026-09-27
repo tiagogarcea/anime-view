@@ -42,7 +42,7 @@ export default function FilterDrawer({ open, onClose, filters, onChange, result,
       <aside className="drawer" role="dialog" aria-modal="true" aria-label="Filtros">
         <div className="drawer-head">
           <h2>FILTROS</h2>
-          <span className="muted small">{fmtInt(result.rows.length)} cartas</span>
+          <span className="muted small">{fmtInt(result.rows.length)} animes</span>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Fechar filtros">✕</button>
         </div>
 
@@ -114,7 +114,7 @@ export default function FilterDrawer({ open, onClose, filters, onChange, result,
 
         <div className="drawer-foot">
           <button type="button" className="btn line" onClick={onClear}>LIMPAR TUDO</button>
-          <button type="button" className="btn red" onClick={onClose}>VER {fmtInt(result.rows.length)} CARTAS</button>
+          <button type="button" className="btn red" onClick={onClose}>VER {fmtInt(result.rows.length)} ANIMES</button>
         </div>
       </aside>
     </div>

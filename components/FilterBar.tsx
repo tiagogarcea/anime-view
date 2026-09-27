@@ -48,8 +48,8 @@ export default function FilterBar({ tab, filters, onChange, onOpenDrawer, onClea
 
   return (
     <section className="bar">
-      <h2 className="bar-title">{tab === "deck" ? "O DECK" : "ESTATÍSTICAS"}</h2>
-      {tab === "stats" && <span className="muted small">baseado em {fmtInt(count)} cartas filtradas ›</span>}
+      <h2 className="bar-title">{tab === "deck" ? "ANIME LIST" : "ESTATÍSTICAS"}</h2>
+      {tab === "stats" && <span className="muted small">baseado em {fmtInt(count)} animes filtrados ›</span>}
       <div className="chips">
         {chips.map((c) => (
           <button type="button" key={c.label} className={`chip ${c.tone ?? ""}`} onClick={c.remove} aria-label={`Remover filtro ${c.label}`}>
@@ -78,7 +78,7 @@ export default function FilterBar({ tab, filters, onChange, onOpenDrawer, onClea
           <button type="button" className="dir" onClick={() => onSort(sortKey, !sortAsc)} aria-label={sortAsc ? "Crescente; trocar para decrescente" : "Decrescente; trocar para crescente"}>
             {sortAsc ? "↑ CRESC." : "↓ DECRESC."}
           </button>
-          <span className="muted">{fmtInt(count)} CARTAS</span>
+          <span className="muted">{fmtInt(count)} ANIMES</span>
         </div>
       )}
     </section>
