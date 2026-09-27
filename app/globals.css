@@ -406,21 +406,28 @@ select, .dir {
 .day.today .day-name { color: var(--cyan); border-bottom-color: var(--cyan); }
 .day-name span { font-size: 12px; letter-spacing: 1px; }
 .srow {
-  display: grid; grid-template-columns: 40px 44px minmax(0, 1fr) auto auto; align-items: center; gap: 14px;
+  display: grid; grid-template-columns: auto 44px minmax(0, 1fr) auto; align-items: center; gap: 14px;
   padding: 8px 14px 8px 8px; margin-bottom: 6px; border: 1px solid var(--line); background: var(--panel);
   transition: background 0.2s, border-color 0.2s;
 }
 .srow.s-ok { background: rgba(61, 220, 132, 0.09); border-color: rgba(61, 220, 132, 0.45); }
-.sicon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; border: 1px solid currentColor; }
-.s-ok .sicon { color: var(--green); }
-.s-late .sicon { color: var(--red); }
-.s-pre .sicon { color: var(--blue); }
-.s-unknown .sicon { color: var(--muted); }
+.srow.s-late { border-color: rgba(255, 45, 61, 0.35); }
+.srow.s-pre { border-color: rgba(77, 155, 255, 0.3); }
+.sstatus { display: flex; gap: 4px; }
+.sbtn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; border: 1px solid var(--line-2); background: var(--bg); color: var(--gray); }
+.sbtn:hover { color: var(--soft); border-color: var(--soft); }
+.sbtn.ok.on { color: var(--bg); background: var(--green); border-color: var(--green); }
+.sbtn.late.on { color: #fff; background: var(--red); border-color: var(--red); }
+.sbtn.pre.on { color: var(--bg); background: var(--blue); border-color: var(--blue); }
+.sbtn.ok:hover:not(.on) { color: var(--green); border-color: var(--green); }
+.sbtn.late:hover:not(.on) { color: var(--red); border-color: var(--red); }
+.sbtn.pre:hover:not(.on) { color: var(--blue); border-color: var(--blue); }
+.stotal { margin-left: 8px; font-family: var(--display); font-size: 15px; color: var(--muted); min-width: 34px; }
+.saved { color: var(--green); }
 .sthumb { width: 44px; height: 60px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-size: 22px; color: rgba(255,255,255,0.35); border: 1px solid var(--line-2); }
 .sthumb img { width: 100%; height: 100%; object-fit: cover; }
 .sname { font-family: var(--display); font-size: 15px; font-weight: 600; text-transform: uppercase; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .smeta { font-size: 12px; color: var(--soft); margin-top: 3px; }
-.s-late .smeta { color: #ff8a93; }
 .s-ok .smeta { color: var(--green); }
 .saving { color: var(--gold); }
 .sstep { display: flex; align-items: center; }
@@ -432,8 +439,6 @@ select, .dir {
   color: var(--text); text-align: center; font-family: var(--display); font-size: 17px; font-weight: 700; -moz-appearance: textfield;
 }
 .sstep input::-webkit-outer-spin-button, .sstep input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.scatch { height: 36px; padding: 0 12px; border: 1px solid var(--green); background: transparent; color: var(--green); font-size: 12px; font-weight: 700; letter-spacing: 1px; white-space: nowrap; }
-.scatch:hover { background: rgba(61, 220, 132, 0.12); }
 .season-nota { margin-top: 18px; }
 .senha { width: min(360px, 100%); padding: 24px; background: var(--bg); border: 1px solid var(--line-2); display: flex; flex-direction: column; gap: 12px; }
 .senha h2 { margin: 0; font-family: var(--display); letter-spacing: 1px; }
@@ -442,10 +447,11 @@ select, .dir {
 .senha-acoes { display: flex; gap: 10px; }
 .senha-acoes .btn { flex: 1; height: 44px; }
 @media (max-width: 640px) {
-  .srow { grid-template-columns: 32px 40px minmax(0, 1fr); gap: 10px; }
-  .sicon { width: 28px; height: 28px; font-size: 15px; }
-  .sthumb { width: 40px; height: 54px; }
+  .srow { grid-template-columns: 40px minmax(0, 1fr); grid-template-areas: "thumb info" "thumb status" "thumb step"; gap: 8px 10px; }
+  .sthumb { grid-area: thumb; width: 40px; height: 54px; align-self: start; }
+  .sinfo { grid-area: info; }
+  .sstatus { grid-area: status; }
+  .sstep { grid-area: step; }
   .sname { white-space: normal; }
-  .sstep, .scatch { grid-column: 2 / -1; }
   .season-count { margin-left: 0; }
 }

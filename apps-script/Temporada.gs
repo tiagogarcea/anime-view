@@ -12,13 +12,19 @@
  * 4. Coloque essa URL em SCRIPT_URL (lib/temporada.ts) ou na variável TEMPORADA_SCRIPT_URL da Vercel.
  *
  * GET  → lista { numero, imagem } para o site mostrar as capas coladas na coluna "Imagem".
- * POST → { senha, numero, episodio } grava o episódio na coluna "Último episódio visto".
+ * POST → { senha, numero, episodio } grava o episódio na coluna "Último episódio visto";
+ *        { senha, numero, semanal: "V" | "X" | "-" | "" } grava o status na coluna "Semanal".
+ *
+ * Para atualizar o código mantendo a mesma URL: Implantar › Gerenciar implantações ›
+ * lápis (editar) › Versão: "Nova versão" › Implantar.
  */
 
 const ABA = "Temporada Atual";
 const COL_NUMERO = "Número";
 const COL_IMAGEM = "Imagem";
 const COL_EPISODIO = "Último episódio visto";
+const COL_SEMANAL = "Semanal";
+const SEMANAL_VALIDOS = ["V", "X", "-", ""];
 
 function doGet() {
   const { sheet, values, header } = lerAba();
@@ -44,21 +50,30 @@ function doPost(e) {
   const senha = PropertiesService.getScriptProperties().getProperty("SENHA");
   if (!senha || body.senha !== senha) return json({ ok: false, erro: "senha" });
 
-  const vazio = body.episodio === "" || body.episodio === null || body.episodio === undefined;
-  const episodio = vazio ? "" : Number(body.episodio);
-  if (!vazio && (!Number.isInteger(episodio) || episodio < 0 || episodio > 9999)) return json({ ok: false, erro: "episodio" });
+  // qual coluna gravar: "Semanal" (status) ou "Último episódio visto"
+  let alvo, valor;
+  if (body.semanal !== undefined) {
+    valor = String(body.semanal).toUpperCase();
+    if (SEMANAL_VALIDOS.indexOf(valor) < 0) return json({ ok: false, erro: "semanal" });
+    alvo = COL_SEMANAL;
+  } else {
+    const vazio = body.episodio === "" || body.episodio === null || body.episodio === undefined;
+    valor = vazio ? "" : Number(body.episodio);
+    if (!vazio && (!Number.isInteger(valor) || valor < 0 || valor > 9999)) return json({ ok: false, erro: "episodio" });
+    alvo = COL_EPISODIO;
+  }
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
     const { sheet, values, header } = lerAba();
     const cNum = coluna(values[header], COL_NUMERO);
-    const cEp = coluna(values[header], COL_EPISODIO);
-    if (cNum < 0 || cEp < 0) return json({ ok: false, erro: "colunas" });
+    const cAlvo = coluna(values[header], alvo);
+    if (cNum < 0 || cAlvo < 0) return json({ ok: false, erro: "colunas" });
     for (let r = header + 1; r < values.length; r++) {
       if (Number(values[r][cNum]) === Number(body.numero)) {
-        sheet.getRange(r + 1, cEp + 1).setValue(episodio);
-        return json({ ok: true, numero: Number(body.numero), episodio: episodio });
+        sheet.getRange(r + 1, cAlvo + 1).setValue(valor);
+        return json({ ok: true, numero: Number(body.numero), coluna: alvo, valor: valor });
       }
     }
     return json({ ok: false, erro: "anime" });
