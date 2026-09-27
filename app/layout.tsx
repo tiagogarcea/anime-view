@@ -6,7 +6,7 @@ const display = Chakra_Petch({ subsets: ["latin"], weight: ["500", "600", "700"]
 const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500", "700"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "Anime View · Tiago Garcéa",
+  title: "Anime View",
   description: "Coleção pessoal de animes: lista, sorteio do dia e estatísticas.",
 };
 
