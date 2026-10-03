@@ -111,7 +111,8 @@ Raridade das cartas: score 10 = SSR, 9 = SR, 8 = R, até 7 = N (`tierOf` em `lib
 ### Stats
 Heatmap de atividade por ano (com seletor e nomes no tooltip), distribuição por score, ano de
 lançamento, assistidos ao longo do tempo (por mês; a partir de jan/2023 usa a aba Historico e conta
-rewatches), top 15 estúdios, top 12 temas, gêneros, demografia (barra empilhada) e mais reassistidos.
+rewatches), top 15 estúdios, top 12 temas, gêneros, demografia (barra empilhada) e mais reassistidos
+(top 24).
 Tudo responde aos filtros.
 
 ### Temporada
@@ -224,7 +225,7 @@ public/covers/          capas ampliadas
 | Distribuição por score | Colunas coloridas por raridade |
 | Animes por ano de lançamento | Colunas com o pico destacado |
 | Assistidos ao longo do tempo | Área por mês, com rewatches da aba Historico desde 2023 |
-| Top 20 rewatches | Grade de capas clicáveis |
+| Top 20 rewatches | Top 24, em grade de capas clicáveis |
 | Top 15 estúdios, Top 12 temas | Barras horizontais |
 | Pizza de demografia e de gênero | Barra empilhada (demografia) e barras (gêneros) |
 | — | Novo: aba Temporada com gravação na planilha |

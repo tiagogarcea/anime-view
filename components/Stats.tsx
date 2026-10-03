@@ -22,7 +22,7 @@ export default function Stats({ rows, history, onOpen }: { rows: Anime[]; histor
 
   const demo = countBy(rows, (a) => a.demografia).sort((a, b) => b.n - a.n);
   const demoTotal = demo.reduce((s, d) => s + d.n, 0);
-  const rw = topRewatch(rows, 20);
+  const rw = topRewatch(rows, 24);
 
   return (
     <div className="stats">

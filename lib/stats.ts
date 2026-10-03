@@ -118,6 +118,6 @@ export function byDay(rows: Anime[]): Map<string, Anime[]> {
   return m;
 }
 
-export function topRewatch(rows: Anime[], k = 20): Anime[] {
+export function topRewatch(rows: Anime[], k = 24): Anime[] {
   return rows.filter((a) => a.rewatch > 0).sort((a, b) => b.rewatch - a.rewatch || b.score - a.score).slice(0, k);
 }
