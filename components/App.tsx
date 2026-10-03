@@ -17,9 +17,15 @@ import DetailModal from "./DetailModal";
 import Stats from "./Stats";
 
 export type Tab = "deck" | "stats" | "temporada";
+const TABS: Tab[] = ["deck", "stats", "temporada"];
+/** Aba guardada no endereço (#stats, #temporada) para o F5 voltar nela; sem # = deck. */
+const tabDoHash = (): Tab => {
+  const h = window.location.hash.slice(1) as Tab;
+  return TABS.includes(h) ? h : "deck";
+};
 
 export default function App({ animes, history, temporada }: { animes: Anime[]; history: Viewing[]; temporada: SeasonItem[] }) {
-  const [tab, setTab] = useState<Tab>("deck");
+  const [tab, setTabState] = useState<Tab>("deck");
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [sortKey, setSortKey] = useState<SortKey>(DEFAULT_SORT.key);
   const [sortAsc, setSortAsc] = useState(DEFAULT_SORT.asc);
@@ -29,6 +35,23 @@ export default function App({ animes, history, temporada }: { animes: Anime[]; h
 
   const result = useMemo(() => applyFilters(animes, filters), [animes, filters]);
   const rows = useMemo(() => sortRows(result.rows, sortKey, sortAsc), [result.rows, sortKey, sortAsc]);
+
+  // Lê a aba do endereço só no cliente (no servidor não há hash) e acompanha voltar/avançar do navegador.
+  useEffect(() => {
+    const sync = () => setTabState(tabDoHash());
+    sync();
+    window.addEventListener("hashchange", sync);
+    window.addEventListener("popstate", sync);
+    return () => {
+      window.removeEventListener("hashchange", sync);
+      window.removeEventListener("popstate", sync);
+    };
+  }, []);
+  const setTab = (t: Tab) => {
+    setTabState(t);
+    const url = t === "deck" ? window.location.pathname + window.location.search : `#${t}`;
+    if (tabDoHash() !== t) window.history.pushState(null, "", url);
+  };
 
   // Sorteio só no cliente (Math.random no servidor quebraria a hidratação).
   useEffect(() => {

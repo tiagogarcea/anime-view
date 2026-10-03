@@ -92,7 +92,9 @@ Imagens coladas e a URL por trás do texto "Link" não saem no gviz: vêm do `do
 
 ## Funcionalidades
 
-Três abas no topo: **ANIME LIST**, **STATS** e **TEMPORADA**.
+Três abas no topo: **ANIME LIST**, **STATS** e **TEMPORADA**. A aba fica no endereço (`/#stats`,
+`/#temporada`; sem `#` = Anime List): o F5 recarrega na mesma aba, o link abre direto nela e o
+voltar/avançar do navegador troca de aba.
 
 ### Anime List
 - "Puxada do dia": sorteio ponderado (peso = score, mínimo 1; favorito dobra; +0,1 por mês desde a
@@ -194,7 +196,7 @@ lib/
   format.ts             datas, números, cor por nome
   hdCovers.ts           lista das capas ampliadas em public/covers/
 components/
-  App.tsx               estado (aba, filtros, ordenação, modal)
+  App.tsx               estado (aba no #hash, filtros, ordenação, modal)
   Header.tsx            marca e abas
   Hero.tsx              puxada do dia
   KpiStrip.tsx, FilterBar.tsx, FilterDrawer.tsx
