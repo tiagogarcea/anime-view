@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Chakra_Petch, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -8,7 +8,11 @@ const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500", "700"],
 export const metadata: Metadata = {
   title: "Anime View",
   description: "Coleção pessoal de animes: lista, sorteio do dia e estatísticas.",
+  // instalado no iPhone (Compartilhar › Adicionar à Tela de Início): abre em tela cheia
+  appleWebApp: { capable: true, title: "Anime View", statusBarStyle: "black" },
 };
+
+export const viewport: Viewport = { themeColor: "#07070c" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

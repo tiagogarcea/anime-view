@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { DIAS, hojeDia, nomeDoSite, Semanal, SeasonItem, semanalAoMarcar, semanalEfetivo } from "@/lib/temporada";
+import { DIAS, escreverFiltroStatus, hojeDia, lerFiltroStatus, nomeDoSite, Semanal, SeasonItem, semanalAoMarcar, semanalEfetivo } from "@/lib/temporada";
 import { fmtDate, hueOf } from "@/lib/format";
 
 const SENHA_KEY = "anime-view-senha";
@@ -23,6 +23,12 @@ const STATUS: { v: Exclude<Semanal, "">; icon: string; label: string; cls: strin
   { v: "X", icon: "✕", label: "Episódio novo não visto", cls: "late" },
   { v: "-", icon: "—", label: "Não estreou", cls: "pre" },
 ];
+const FILTROS: { v: Semanal; icon: string; label: string; cls: string }[] = [
+  { v: "V", icon: "✓", label: "em dia", cls: "st-ok" },
+  { v: "X", icon: "✕", label: "com episódio novo", cls: "st-late" },
+  { v: "-", icon: "—", label: "não estrearam", cls: "st-pre" },
+  { v: "", icon: "·", label: "sem marcação", cls: "st-none" },
+];
 const CLS: Record<Semanal, string> = { V: "s-ok", X: "s-late", "-": "s-pre", "": "s-none" };
 
 function lerSenha(): string {
@@ -32,7 +38,16 @@ function guardarSenha(s: string) {
   try { if (s) localStorage.setItem(SENHA_KEY, s); else localStorage.removeItem(SENHA_KEY); } catch { /* sem storage */ }
 }
 
-export default function Season({ items }: { items: SeasonItem[] }) {
+export default function Season({ items, atualizado, filtroInicial }: { items: SeasonItem[]; atualizado: string; filtroInicial: Semanal[] }) {
+  // status escolhidos nos contadores do topo; vazio = mostra todos. Fica no endereço (?status=).
+  // ao voltar para a aba, relê do endereço (o valor do servidor é só o da hora em que a página abriu)
+  const [filtro, setFiltro] = useState<Semanal[]>(() =>
+    typeof window === "undefined" ? filtroInicial : lerFiltroStatus(new URLSearchParams(window.location.search).getAll("status")));
+  useEffect(() => {
+    const busca = escreverFiltroStatus(new URLSearchParams(window.location.search), filtro);
+    if (busca !== window.location.search) window.history.replaceState(null, "", window.location.pathname + busca);
+  }, [filtro]);
+  const alternar = (s: Semanal) => setFiltro((f) => (f.includes(s) ? f.filter((x) => x !== s) : [...f, s]));
   const inicial = () => new Map(items.map((i) => [i.numero, { ep: i.ultimoEp, sem: i.semanal }]));
   const [vals, setVals] = useState<Map<number, Valores>>(inicial);
   const [estado, setEstado] = useState<Map<number, Estado>>(new Map());
@@ -101,11 +116,12 @@ export default function Season({ items }: { items: SeasonItem[] }) {
     return c;
   }, [lista]);
   const grupos = useMemo(() => {
-    const g = DIAS.map((dia) => ({ dia, itens: lista.filter((i) => i.diaSemana === dia) }));
-    const outros = lista.filter((i) => !DIAS.includes(i.diaSemana));
+    const visiveis = filtro.length ? lista.filter((i) => filtro.includes(i.semanal)) : lista;
+    const g = DIAS.map((dia) => ({ dia, itens: visiveis.filter((i) => i.diaSemana === dia) }));
+    const outros = visiveis.filter((i) => !DIAS.includes(i.diaSemana));
     if (outros.length) g.push({ dia: "Outros", itens: outros });
     return g.filter((x) => x.itens.length);
-  }, [lista]);
+  }, [lista, filtro]);
 
   if (!items.length) {
     return (
@@ -121,14 +137,22 @@ export default function Season({ items }: { items: SeasonItem[] }) {
     <section className="season" aria-label="Temporada atual">
       <div className="bar">
         <h2 className="bar-title">TEMPORADA ATUAL</h2>
-        <div className="season-count">
-          <span className="st-ok"><i>✓</i> {contagem.V} em dia</span>
-          <span className="st-late"><i>✕</i> {contagem.X} com episódio novo</span>
-          <span className="st-pre"><i>—</i> {contagem["-"]} não estrearam</span>
-          {contagem[""] > 0 && <span className="muted">{contagem[""]} sem marcação</span>}
+        <div className="season-count" role="group" aria-label="Filtrar por status">
+          {FILTROS.filter((f) => f.v !== "" || contagem[""] > 0 || filtro.includes("")).map((f) => (
+            <button
+              key={f.v} type="button" className={`sfil ${f.cls}${filtro.includes(f.v) ? " on" : ""}`}
+              aria-pressed={filtro.includes(f.v)} onClick={() => alternar(f.v)}
+              title={filtro.includes(f.v) ? "Clique para tirar do filtro" : "Clique para filtrar"}
+            >
+              <i>{f.icon}</i> {contagem[f.v]} {f.label}
+            </button>
+          ))}
+          {filtro.length > 0 && <button type="button" className="sfil-limpar" onClick={() => setFiltro([])}>mostrar todos</button>}
         </div>
       </div>
       {aviso && <div className="season-aviso" role="status">{aviso}</div>}
+
+      {!grupos.length && <p className="muted">Nenhum anime com esse status.</p>}
 
       {grupos.map(({ dia, itens }) => (
         <div key={dia} className={DIAS.indexOf(dia) === hojeIdx ? "day today" : "day"}>
@@ -149,7 +173,9 @@ export default function Season({ items }: { items: SeasonItem[] }) {
         </div>
       ))}
 
-      <p className="season-nota muted small">Total e episódios lançados vêm do AniList e são atualizados a cada hora.</p>
+      <p className="season-nota muted small">
+        Temporada atualizada às {atualizado}. Total e episódios lançados vêm do AniList (atualizados a cada hora).
+      </p>
 
       {pedirSenha && (
         <SenhaModal

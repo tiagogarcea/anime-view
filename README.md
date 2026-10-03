@@ -30,6 +30,8 @@ npm test           # testes das regras (tests/*.test.ts)
 - `tests/planilha.test.ts` — leitura das abas Animes Completos e Historico (formatos de data,
   colunas, ligação pelo nome), raridade.
 - `tests/filtros.test.ts` — filtros, ordenação, `?aba=` e filtros no endereço.
+- `tests/retro.test.ts` — retrospectiva/comparação de anos, filtro de status da Temporada no
+  endereço e formato da hora de atualização.
 - `tests/appsScript.test.ts` — roda o `apps-script/Temporada.gs` de verdade numa planilha falsa, com
   data e fuso controlados: gatilho diário (estreias, virada semanal de `V`, fuso da planilha),
   links/imagens das células e senha do `doPost`.
@@ -46,8 +48,8 @@ A pasta `Anime-View/` é o próprio repositório: para publicar, `npm test`, `np
 push (ou rode `Git_Push.bat`, que faz `git add .`, commit com data/hora e push). A antiga
 `Anime-View-Git/` não é mais usada.
 
-A planilha é relida no máximo a cada 60 s (cache de cada fetch; `revalidate` em `app/page.tsx`).
-A página em si é montada a cada visita, porque lê a aba e os filtros da URL.
+A planilha é relida no máximo a cada 60 s (`lib/dados.ts`), guardando sempre a última versão que
+funcionou. A página em si é montada a cada visita, porque lê a aba e os filtros da URL.
 
 ### Variáveis de ambiente (todas opcionais)
 
@@ -61,13 +63,19 @@ Sem elas, o código usa as URLs fixas da planilha `1a6Ylv7yKu8yb1DJkYpZynTSedbOz
 
 ## Fontes de dados
 
-Tudo vem de uma única planilha do Google, lida no servidor em `app/page.tsx`:
+Tudo vem de uma única planilha do Google, lida no servidor (`app/page.tsx` → `lib/dados.ts`).
+
+**Se o Google falhar** (fora do ar, resposta vazia), o site não mostra erro: continua com a última
+versão que funcionou e tenta de novo na visita seguinte. Cada aba é guardada com a hora em que foi
+lida, mostrada no rodapé ("planilha atualizada às 19:43:28 03/10/2026", horário de Brasília) e, na
+aba Temporada, abaixo da lista. Só aparece "Erro ao carregar a planilha" se a planilha nunca tiver
+sido lida com sucesso naquele servidor (cache vazio, ex.: logo após o primeiro deploy).
 
 | Aba | Como é lida | Cache | Se falhar |
 | --- | --- | --- | --- |
-| **Animes Completos** (`gid=1713940120`) | CSV público (`lib/sheet.ts`) | 60 s | Página mostra "Erro ao carregar a planilha" |
-| **Historico** (`gid=1281634781`) | CSV público (`lib/history.ts`) | 60 s | Site segue só com o "Last seen" |
-| **Temporada Atual** | JSON do gviz (`lib/temporada.ts`) | 60 s, tag `temporada` | Aba Temporada mostra "SEM DADOS" |
+| **Animes Completos** (`gid=1713940120`) | CSV público (`lib/sheet.ts`) | 60 s | Última versão boa; sem nenhuma, "Erro ao carregar a planilha" |
+| **Historico** (`gid=1281634781`) | CSV público (`lib/history.ts`) | 60 s | Última versão boa; sem nenhuma, só o "Last seen" |
+| **Temporada Atual** | JSON do gviz (`lib/temporada.ts`) | 60 s, tag `temporada` | Última versão boa; sem nenhuma, "SEM DADOS" |
 | Capas da Temporada Atual | Coluna `Url Imagem` (gviz); reserva: GET no Apps Script | 60 s | Mostra a inicial do nome |
 | Streaming e link da Temporada | GET no Apps Script (colunas `Onde assistir?` e `Link`) | 60 s, tag `temporada` | Botão "assistir" não aparece |
 | Episódios (total / lançados) | GraphQL do AniList | 1 h | Mostra "?" |
@@ -140,8 +148,19 @@ rewatches), top 15 estúdios, top 12 temas, gêneros, demografia (barra empilhad
 (top 24).
 Tudo responde aos filtros.
 
+**Retrospectiva** (`components/Retro.tsx`, `retrospectiva` em `lib/stats.ts`): resumo de um ano pela
+aba Historico — só de 2023 em diante, porque antes não há registro de cada vez assistida. Mostra vezes
+que assistiu (1ª vez × rewatches), animes diferentes, episódios, horas, nota média, mês mais ativo,
+gráfico por mês, top estúdios/gêneros/temas e as maiores notas do ano (clicáveis). No ano em andamento
+avisa até que mês vai. **Comparar com** outro ano mostra os dois lado a lado (tabela com diferença,
+meses e gêneros/estúdios de cada um); se um dos anos estiver em andamento, compara por padrão o mesmo
+período (jan até o mês atual) nos dois — dá para desmarcar.
+
 ### Temporada
 - Animes da temporada agrupados por dia da semana, com o dia de hoje destacado.
+- Os contadores do topo (✓ em dia, ✕ com episódio novo, — não estrearam, sem marcação) são também o
+  filtro: clique para mostrar só esses status (dá para escolher vários); "mostrar todos" limpa.
+  Fica no endereço (`?status=X&status=-`; `sem` = sem marcação), então o F5 mantém.
 - O card inteiro (fundo, borda e linha de informações) fica na cor do status: verde = em dia (`V`),
   vermelho = episódio novo não visto (`X`), azul = não estreou (`-`). Sem marcação fica neutro.
 - Para cada um: status semanal (✓ / ✕ / —), capa, data de estreia, último episódio visto,
@@ -164,6 +183,14 @@ Tudo responde aos filtros.
 - Total e lançados vêm do AniList: busca pelo nome e aceita só o resultado com estreia a até
   30 dias do "Dia de inicio"; se não achar, tenta variantes ("II" → "2" / "2nd Season", parte antes
   dos dois-pontos).
+
+## No celular
+
+O site é instalável (`app/manifest.ts`): no Android/Chrome, menu › **Instalar app** (ou "Adicionar à
+tela inicial"); no iPhone/Safari, Compartilhar › **Adicionar à Tela de Início**. Abre em tela cheia,
+sem a barra do navegador, com o ícone do site (`public/icon-192.png`, `icon-512.png` e
+`icon-maskable-512.png`, que o Android recorta em círculo/quadrado). Em telas pequenas as abas ficam
+numa linha só e os painéis viram uma coluna.
 
 ## API
 
@@ -205,12 +232,14 @@ Instalação e atualização (mantendo a mesma URL) estão descritas no topo do 
 
 ```
 app/
-  layout.tsx            fontes e metadados
-  page.tsx              lê as 3 abas da planilha (cache de 60 s) e o ?aba= da URL; monta <App>
+  layout.tsx            fontes, metadados e cor do tema (celular)
+  manifest.ts           manifesto para instalar no celular
+  page.tsx              lê as 3 abas (lib/dados.ts), a aba e os filtros da URL; monta <App>
   globals.css           todo o visual
   api/temporada/        rota POST que grava na aba Temporada Atual
   icon.svg, apple-icon.png
 lib/
+  dados.ts              cache das 3 abas (60 s), com hora da leitura e a última versão boa
   types.ts              tipo Anime, raridades (tierOf)
   tabs.ts               abas do site e validação do ?aba= (servidor e cliente)
   urlFiltros.ts         filtros e ordenação ↔ parâmetros do endereço (servidor e cliente)
@@ -219,9 +248,9 @@ lib/
   temporada.ts          gviz "Temporada Atual" (com Url Imagem) + streaming/link/capas reserva
                         (Apps Script) + AniList
   filters.ts            filtros em cascata e ordenação
-  stats.ts              agregações dos KPIs e gráficos
+  stats.ts              agregações dos KPIs e gráficos, retrospectiva do ano
   suggest.ts            sorteio ponderado da puxada do dia
-  format.ts             datas, números, cor por nome
+  format.ts             datas, números, hora de atualização, cor por nome
   hdCovers.ts           lista das capas ampliadas em public/covers/
 components/
   App.tsx               estado (aba, filtros e ordenação, todos no endereço; modal)
@@ -230,10 +259,12 @@ components/
   KpiStrip.tsx, FilterBar.tsx, FilterDrawer.tsx
   Collection.tsx, Card.tsx, Poster.tsx, DetailModal.tsx
   Stats.tsx             gráficos
-  Season.tsx            aba Temporada (status, episódios, onde assistir, senha)
+  Retro.tsx             retrospectiva do ano e comparação entre anos
+  Season.tsx            aba Temporada (filtro de status, episódios, onde assistir, senha)
 apps-script/
   Temporada.gs          script do Google colado na planilha
 public/covers/          capas ampliadas
+public/icon-*.png       ícones do app instalado
 tests/                  testes das regras (npm test)
 ```
 

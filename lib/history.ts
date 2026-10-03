@@ -54,15 +54,13 @@ export function parseHistory(csv: string): Viewing[] {
   return out;
 }
 
-/** Se a aba não carregar, o site segue funcionando só com o Last seen. */
+/** Lê a aba agora; falha → erro (lib/dados.ts guarda a última versão boa). */
 export async function loadHistory(): Promise<Viewing[]> {
-  try {
-    const res = await fetch(HISTORY_URL, { next: { revalidate: 60 } });
-    if (!res.ok) return [];
-    return parseHistory(await res.text());
-  } catch {
-    return [];
-  }
+  const res = await fetch(HISTORY_URL, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Historico respondeu ${res.status}`);
+  const h = parseHistory(await res.text());
+  if (!h.length) throw new Error("Historico veio vazio");
+  return h;
 }
 
 const chave = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");

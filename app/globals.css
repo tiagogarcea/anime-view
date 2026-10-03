@@ -347,6 +347,52 @@ select, .dir {
 .rw-n { position: absolute; bottom: 6px; right: 6px; padding: 2px 7px; background: var(--cyan); color: var(--bg); font-size: 12px; font-weight: 700; border-radius: 4px; }
 .rw-name { font-family: var(--display); font-size: 13px; font-weight: 600; line-height: 1.15; text-transform: uppercase; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
+/* Retrospectiva e comparação de anos (Stats) */
+.retro-ctl { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.retro-cmp-sel { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.retro-cmp-sel select { height: 32px; padding: 0 8px; border: 1px solid var(--line-2); background: var(--bg); color: var(--text); }
+.retro-nums { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border: 1px solid var(--line); }
+.retro-num { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-right: 1px solid var(--line); min-width: 0; }
+.retro-num:last-child { border-right: 0; }
+.retro-num b { font-family: var(--display); font-size: 30px; line-height: 1.1; text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.retro-num span { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+.retro-num small { font-size: 11px; color: var(--soft); }
+.retro-meses { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 6px; height: 150px; }
+.retro-mes { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 4px; min-height: 0; }
+.retro-col { flex: 1; display: flex; align-items: flex-end; gap: 2px; min-height: 0; }
+.retro-bar { display: block; flex: 1; min-height: 2px; background: #9a1a26; border-radius: 2px 2px 0 0; }
+.retro-mes-n { font-size: 11px; color: var(--soft); text-align: center; min-height: 14px; }
+.retro-mes-l { font-size: 10px; color: var(--muted); text-transform: uppercase; text-align: center; }
+.retro-dest { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; }
+.retro-sub { margin: 4px 0 8px; font-family: var(--display); font-size: 13px; letter-spacing: 1px; color: var(--muted); }
+.retro-top { margin: 0; padding: 0; list-style: none; }
+.retro-top li { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.retro-top li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.retro-top li b { color: var(--soft); }
+.retro-best { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
+.retro-tab { width: 100%; border-collapse: collapse; font-size: 14px; }
+.retro-tab th, .retro-tab td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: right; }
+.retro-tab th[scope="row"] { text-align: left; font-weight: 400; color: var(--soft); }
+.retro-tab thead th { font-family: var(--display); font-size: 15px; }
+.retro-tab td { font-family: var(--display); font-size: 17px; font-weight: 600; }
+.retro-tab .ca { color: var(--red); } .retro-tab .cb { color: var(--cyan); }
+.retro-tab .up { color: var(--green); } .retro-tab .down { color: var(--red); }
+.retro-periodo { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--soft); }
+@media (max-width: 860px) {
+  .retro-nums { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .retro-num:nth-child(3n) { border-right: 0; }
+  .retro-num:nth-child(-n + 3) { border-bottom: 1px solid var(--line); }
+  .retro-best { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .retro-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .retro-num { border-bottom: 1px solid var(--line); }
+  .retro-num:nth-child(3n) { border-right: 1px solid var(--line); }
+  .retro-num:nth-child(2n) { border-right: 0; }
+  .retro-num b { font-size: 24px; }
+  .retro-meses { gap: 3px; }
+}
+
 /* Tooltip leve para qualquer elemento com data-tip */
 [data-tip]:hover::after {
   content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
@@ -378,6 +424,9 @@ select, .dir {
   .modal-art { width: 180px; }
 }
 @media (max-width: 520px) {
+  /* abas numa linha só, dividindo a largura (antes o "]" quebrava para baixo) */
+  .tabs { width: 100%; }
+  .tab { flex: 1; padding: 10px 4px; white-space: nowrap; font-size: 12px; letter-spacing: 1px; }
   .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .kpi { padding: 16px; }
   .kpi-value { font-size: 30px; }
@@ -402,9 +451,18 @@ select, .dir {
 
 /* ── Temporada atual ──────────────────────────────────── */
 .season { margin-top: 12px; }
-.season-count { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; margin-left: auto; }
+.season-count { display: flex; gap: 8px; flex-wrap: wrap; font-size: 13px; margin-left: auto; }
 .season-count i { font-style: normal; font-weight: 700; margin-right: 4px; }
-.st-ok i { color: var(--green); } .st-late i { color: var(--red); } .st-pre i { color: var(--blue); }
+.st-ok i { color: var(--green); } .st-late i { color: var(--red); } .st-pre i { color: var(--blue); } .st-none i { color: var(--muted); }
+/* contadores do topo da Temporada: também são o filtro de status */
+.sfil { display: inline-flex; align-items: center; gap: 2px; padding: 5px 10px; border: 1px solid var(--line-2); background: none; color: var(--soft); font-size: 13px; }
+.sfil:hover { border-color: var(--soft); color: var(--text); }
+.sfil.on { color: var(--text); }
+.sfil.st-ok.on { border-color: var(--green); background: rgba(61, 220, 132, 0.12); }
+.sfil.st-late.on { border-color: var(--red); background: rgba(255, 45, 61, 0.12); }
+.sfil.st-pre.on { border-color: var(--blue); background: rgba(77, 155, 255, 0.12); }
+.sfil.st-none.on { border-color: var(--soft); background: rgba(255, 255, 255, 0.06); }
+.sfil-limpar { padding: 5px 4px; border: 0; background: none; color: var(--cyan); font-size: 12px; text-decoration: underline; }
 .season-aviso { margin-bottom: 14px; padding: 10px 14px; border: 1px solid var(--gold); color: var(--gold); font-size: 13px; }
 .day { margin-bottom: 22px; }
 .day-name { font-family: var(--display); font-size: 15px; font-weight: 700; letter-spacing: 2px; color: var(--muted); padding: 0 0 8px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }

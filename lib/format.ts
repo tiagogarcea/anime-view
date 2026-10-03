@@ -13,6 +13,17 @@ export function fmtDate(iso: string | null): string {
   return `${d}/${m}/${y}`;
 }
 
+const HORA = new Intl.DateTimeFormat("pt-BR", {
+  timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit", second: "2-digit",
+  day: "2-digit", month: "2-digit", year: "numeric", hour12: false,
+});
+
+/** Instante (ms) → "19:43:28 03/10/2026", sempre no horário de Brasília (o servidor roda em UTC). */
+export function fmtAtualizado(ms: number): string {
+  const p = Object.fromEntries(HORA.formatToParts(new Date(ms)).map((x) => [x.type, x.value]));
+  return `${p.hour}:${p.minute}:${p.second} ${p.day}/${p.month}/${p.year}`;
+}
+
 const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 
 /** AAAA-MM → "mar/2025" */

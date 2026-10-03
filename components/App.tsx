@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Anime } from "@/lib/types";
 import type { Viewing } from "@/lib/history";
-import type { SeasonItem } from "@/lib/temporada";
+import type { Semanal, SeasonItem } from "@/lib/temporada";
 import Season from "./Season";
 import { applyFilters, DEFAULT_SORT, EMPTY_FILTERS, Filters, sortRows, SortKey } from "@/lib/filters";
 import { suggest } from "@/lib/suggest";
@@ -31,8 +31,11 @@ const urlDaTab = (t: Tab) => {
   return window.location.pathname + (s ? `?${s}` : "");
 };
 
-export default function App({ animes, history, temporada, tabInicial, buscaInicial }: {
-  animes: Anime[]; history: Viewing[]; temporada: SeasonItem[]; tabInicial: Tab; buscaInicial: Busca;
+export default function App({ animes, history, temporada, atualizado, temporadaAtualizada, tabInicial, buscaInicial, filtroStatus }: {
+  animes: Anime[]; history: Viewing[]; temporada: SeasonItem[];
+  /** hora em que a planilha foi lida ("19:43:28 03/10/2026"); se o Google falhar, é a da última leitura boa */
+  atualizado: string; temporadaAtualizada: string;
+  tabInicial: Tab; buscaInicial: Busca; filtroStatus: Semanal[];
 }) {
   const [tab, setTabState] = useState<Tab>(tabInicial);
   // filtros e ordenação vêm do endereço (lidos no servidor), para o F5 não perdê-los
@@ -93,7 +96,7 @@ export default function App({ animes, history, temporada, tabInicial, buscaInici
       {tab === "deck" && <Hero anime={pick} onReroll={reroll} onOpen={setOpen} poolSize={result.rows.length} />}
 
       {tab === "temporada" ? (
-        <Season items={temporada} />
+        <Season items={temporada} atualizado={temporadaAtualizada} filtroInicial={filtroStatus} />
       ) : (
         <>
         <KpiStrip rows={result.rows} total={animes.length} showRarity={tab === "deck"} />
@@ -124,7 +127,7 @@ export default function App({ animes, history, temporada, tabInicial, buscaInici
 
       <footer className="foot">
         <span>ANIME//VIEW</span>
-        <span>fonte: Google Sheets · atualiza a cada 60 s</span>
+        <span>planilha atualizada às {atualizado}</span>
       </footer>
 
       <FilterDrawer

@@ -141,36 +141,33 @@ async function completarComAniList(itens: SeasonItem[]) {
   }
 }
 
+/** Lê a aba agora; se a planilha falhar, dá erro (lib/dados.ts guarda a última versão boa). */
 export async function loadTemporada(): Promise<SeasonItem[]> {
-  try {
-    const res = await fetch(GVIZ, { next: { revalidate: 60, tags: ["temporada"] } });
-    if (!res.ok) return [];
-    const itens = parseGviz(await res.text());
-    await Promise.all([
-      // imagens coladas nas células e o link por trás do texto "Link" só saem pelo script do Google.
-      // A capa vem da coluna "Url Imagem"; a colada na coluna "Imagem" é só reserva.
-      (async () => {
-        try {
-          const r = await fetch(SCRIPT_URL, { next: { revalidate: 60, tags: ["temporada"] } });
-          const j = await r.json();
-          type Extra = { numero: number; imagem?: string; streaming?: string; link?: string };
-          const extras = new Map<number, Extra>((j.itens ?? []).map((x: Extra) => [Number(x.numero), x]));
-          for (const it of itens) {
-            const x = extras.get(it.numero);
-            if (!x) continue;
-            // o Google devolve as imagens em 2048 px: 360 px basta para a capa, 96 px para o logo
-            if (!it.img) it.img = (x.imagem ?? "").replace(/=s\d+(?=[?&]|$)/, "=s360");
-            it.streamingImg = (x.streaming ?? "").replace(/=s\d+(?=[?&]|$)/, "=s96");
-            it.link = /^https?:\/\//i.test(x.link ?? "") ? x.link! : "";
-          }
-        } catch { /* sem script: sem streaming/link, e capa sem URL mostra a inicial */ }
-      })(),
-      completarComAniList(itens).catch(() => { /* sem AniList: total fica "?" */ }),
-    ]);
-    return itens;
-  } catch {
-    return [];
-  }
+  const res = await fetch(GVIZ, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Temporada respondeu ${res.status}`);
+  const itens = parseGviz(await res.text());
+  await Promise.all([
+    // imagens coladas nas células e o link por trás do texto "Link" só saem pelo script do Google.
+    // A capa vem da coluna "Url Imagem"; a colada na coluna "Imagem" é só reserva.
+    (async () => {
+      try {
+        const r = await fetch(SCRIPT_URL, { cache: "no-store" });
+        const j = await r.json();
+        type Extra = { numero: number; imagem?: string; streaming?: string; link?: string };
+        const extras = new Map<number, Extra>((j.itens ?? []).map((x: Extra) => [Number(x.numero), x]));
+        for (const it of itens) {
+          const x = extras.get(it.numero);
+          if (!x) continue;
+          // o Google devolve as imagens em 2048 px: 360 px basta para a capa, 96 px para o logo
+          if (!it.img) it.img = (x.imagem ?? "").replace(/=s\d+(?=[?&]|$)/, "=s360");
+          it.streamingImg = (x.streaming ?? "").replace(/=s\d+(?=[?&]|$)/, "=s96");
+          it.link = /^https?:\/\//i.test(x.link ?? "") ? x.link! : "";
+        }
+      } catch { /* sem script: sem streaming/link, e capa sem URL mostra a inicial */ }
+    })(),
+    completarComAniList(itens).catch(() => { /* sem AniList: total fica "?" */ }),
+  ]);
+  return itens;
 }
 
 /** Segunda-feira da semana de uma data AAAA-MM-DD (a semana começa na segunda). */
@@ -209,6 +206,23 @@ export function nomeDoSite(url: string): string {
 export function semanalAoMarcar(ep: number | null, item: Pick<SeasonItem, "lancados">, atual: Semanal): Semanal {
   if (ep !== null && item.lancados && ep >= item.lancados) return "V";
   return atual;
+}
+
+/**
+ * Filtro de status da aba Temporada no endereço: ?status=X&status=- (vazio/"sem" = sem marcação).
+ * Nenhum selecionado = mostra todos. Usado no servidor (app/page.tsx) e no cliente (Season.tsx).
+ */
+const STATUS_URL: Record<string, Semanal> = { V: "V", X: "X", "-": "-", sem: "" };
+export function lerFiltroStatus(v: string | string[] | undefined | null): Semanal[] {
+  const lista = v === undefined || v === null ? [] : Array.isArray(v) ? v : [v];
+  return [...new Set(lista.map((x) => STATUS_URL[x.toUpperCase() === "SEM" ? "sem" : x.toUpperCase()]).filter((x) => x !== undefined))];
+}
+export function escreverFiltroStatus(base: URLSearchParams, sel: Semanal[]): string {
+  const q = new URLSearchParams(base);
+  q.delete("status");
+  for (const s of sel) q.append("status", s === "" ? "sem" : s);
+  const s = q.toString();
+  return s ? `?${s}` : "";
 }
 
 export const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];

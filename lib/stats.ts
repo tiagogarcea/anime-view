@@ -121,3 +121,70 @@ export function byDay(rows: Anime[]): Map<string, Anime[]> {
 export function topRewatch(rows: Anime[], k = 24): Anime[] {
   return rows.filter((a) => a.rewatch > 0).sort((a, b) => b.rewatch - a.rewatch || b.score - a.score).slice(0, k);
 }
+
+/** Resumo de um ano a partir da aba Historico (só existe de 2023 em diante). */
+export type Retro = {
+  ano: string;
+  /** vezes que assistiu (cada linha do Historico), rewatches incluídos */
+  vezes: number;
+  /** animes diferentes */
+  animes: number;
+  primeiras: number;
+  rewatches: number;
+  episodios: number;
+  horas: number;
+  /** média do score dos animes diferentes vistos no ano (0 = sem nota) */
+  notaMedia: number;
+  /** vezes por mês, jan..dez */
+  porMes: number[];
+  /** último mês com registro (1-12): no ano corrente, até onde vão os dados */
+  ateMes: number;
+  estudios: Bucket[];
+  generos: Bucket[];
+  temas: Bucket[];
+  /** maiores scores do ano (animes diferentes), do maior para o menor */
+  melhores: Anime[];
+};
+
+/** Anos que têm registro no Historico, em ordem. */
+export function anosDoHistorico(history: Viewing[]): string[] {
+  return [...new Set(history.filter((v) => v.ym >= HISTORY_START).map((v) => v.ym.slice(0, 4)))].sort();
+}
+
+/**
+ * Retrospectiva de `ano`. Só entram animes que passaram nos filtros (`rows`).
+ * `ateMes` (1-12) corta o ano nesse mês, para comparar o mesmo período de dois anos.
+ */
+export function retrospectiva(rows: Anime[], history: Viewing[], ano: string, ateMes = 12): Retro {
+  const porN = new Map(rows.map((a) => [a.n, a]));
+  const vistas = history.filter((v) => v.ym.startsWith(`${ano}-`) && Number(v.ym.slice(5, 7)) <= ateMes && porN.has(v.n));
+  const porMes = Array<number>(12).fill(0);
+  let episodios = 0;
+  let minutos = 0;
+  let rewatches = 0;
+  for (const v of vistas) {
+    const a = porN.get(v.n)!;
+    porMes[Number(v.ym.slice(5, 7)) - 1]++;
+    episodios += a.eps;
+    minutos += a.eps * a.minPerEp;
+    if (v.rewatch !== null && v.rewatch >= 1) rewatches++;
+  }
+  const unicos = [...new Set(vistas.map((v) => v.n))].map((n) => porN.get(n)!);
+  const comNota = unicos.filter((a) => a.score > 0);
+  return {
+    ano,
+    vezes: vistas.length,
+    animes: unicos.length,
+    primeiras: vistas.length - rewatches,
+    rewatches,
+    episodios,
+    horas: Math.round(minutos / 60),
+    notaMedia: comNota.length ? comNota.reduce((s, a) => s + a.score, 0) / comNota.length : 0,
+    porMes,
+    ateMes: porMes.reduce((ult, n, i) => (n ? i + 1 : ult), 0),
+    estudios: top(unicos, (a) => a.studio, 5),
+    generos: top(unicos, (a) => a.genero, 5),
+    temas: top(unicos, (a) => a.tema, 5),
+    melhores: [...comNota].sort((a, b) => b.score - a.score || a.nome.localeCompare(b.nome)).slice(0, 6),
+  };
+}

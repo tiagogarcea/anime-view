@@ -6,6 +6,7 @@ import { byDay, byMonthWithHistory, byYear, Bucket, countBy, HISTORY_START, scor
 import type { Viewing } from "@/lib/history";
 import { fmtDate, fmtMonth } from "@/lib/format";
 import Poster from "./Poster";
+import Retrospectiva from "./Retro";
 
 const TIER_OF_SCORE = (s: number): Tier => (s >= 10 ? "SSR" : s >= 9 ? "SR" : s >= 8 ? "R" : "N");
 const CAT = ["var(--red)", "var(--cyan)", "var(--gold)", "var(--violet)", "var(--gray)"];
@@ -27,6 +28,8 @@ export default function Stats({ rows, history, onOpen }: { rows: Anime[]; histor
   return (
     <div className="stats">
       <Heatmap rows={rows} />
+
+      {history.length > 0 && <Retrospectiva rows={rows} history={history} onOpen={onOpen} />}
 
       <div className="two">
         <Panel title="DISTRIBUIÇÃO POR SCORE">
