@@ -50,6 +50,8 @@ test("retrospectiva: anime sem nota fica fora da média e dos melhores; rewatch 
   assert.equal(r.primeiras, 2);
   assert.equal(r.notaMedia, 9.5);
   assert.ok(!r.melhores.some((a) => a.nome === "Sem Nota"));
+  // Frieren e Bocchi foram só reassistidos em 2026: ficam fora das maiores notas
+  assert.deepEqual(r.melhores, []);
   assert.deepEqual(r.estudios[0], { label: "Madhouse", n: 2 });
 });
 

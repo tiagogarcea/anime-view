@@ -113,8 +113,8 @@ function Ano({ r, onOpen }: { r: Retro; onOpen: (a: Anime) => void }) {
 
       {r.melhores.length > 0 && (
         <div>
-          <h4 className="retro-sub">MAIORES NOTAS DE {r.ano}</h4>
-          <div className="retro-best">
+          <h4 className="retro-sub">MAIORES NOTAS VISTAS PELA 1ª VEZ EM {r.ano}</h4>
+          <div className="rw-grid">
             {r.melhores.map((a) => (
               <button type="button" key={a.id} className="rw-card" onClick={() => onOpen(a)}>
                 <span className="rw-art"><Poster anime={a} /><span className="rw-n">★ {a.score}</span></span>

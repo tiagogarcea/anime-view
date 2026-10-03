@@ -369,7 +369,6 @@ select, .dir {
 .retro-top li { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
 .retro-top li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .retro-top li b { color: var(--soft); }
-.retro-best { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
 .retro-tab { width: 100%; border-collapse: collapse; font-size: 14px; }
 .retro-tab th, .retro-tab td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: right; }
 .retro-tab th[scope="row"] { text-align: left; font-weight: 400; color: var(--soft); }
@@ -382,7 +381,6 @@ select, .dir {
   .retro-nums { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .retro-num:nth-child(3n) { border-right: 0; }
   .retro-num:nth-child(-n + 3) { border-bottom: 1px solid var(--line); }
-  .retro-best { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 520px) {
   .retro-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); }

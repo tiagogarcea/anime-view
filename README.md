@@ -151,7 +151,8 @@ Tudo responde aos filtros.
 **Retrospectiva** (`components/Retro.tsx`, `retrospectiva` em `lib/stats.ts`): resumo de um ano pela
 aba Historico — só de 2023 em diante, porque antes não há registro de cada vez assistida. Mostra vezes
 que assistiu (1ª vez × rewatches), animes diferentes, episódios, horas, nota média, mês mais ativo,
-gráfico por mês, top estúdios/gêneros/temas e as maiores notas do ano (clicáveis). No ano em andamento
+gráfico por mês, top estúdios/gêneros/temas e as 12 maiores notas entre os animes vistos pela 1ª vez
+no ano (rewatches ficam de fora; capas clicáveis, mesmo tamanho das de "mais reassistidos"). No ano em andamento
 avisa até que mês vai. **Comparar com** outro ano mostra os dois lado a lado (tabela com diferença,
 meses e gêneros/estúdios de cada um); se um dos anos estiver em andamento, compara por padrão o mesmo
 período (jan até o mês atual) nos dois — dá para desmarcar.

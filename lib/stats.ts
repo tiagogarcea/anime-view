@@ -142,7 +142,7 @@ export type Retro = {
   estudios: Bucket[];
   generos: Bucket[];
   temas: Bucket[];
-  /** maiores scores do ano (animes diferentes), do maior para o menor */
+  /** top 12 scores entre os animes vistos pela 1ª vez no ano (rewatch 0 ou não informado), maior primeiro */
   melhores: Anime[];
 };
 
@@ -185,6 +185,10 @@ export function retrospectiva(rows: Anime[], history: Viewing[], ano: string, at
     estudios: top(unicos, (a) => a.studio, 5),
     generos: top(unicos, (a) => a.genero, 5),
     temas: top(unicos, (a) => a.tema, 5),
-    melhores: [...comNota].sort((a, b) => b.score - a.score || a.nome.localeCompare(b.nome)).slice(0, 6),
+    melhores: [...new Set(vistas.filter((v) => !v.rewatch).map((v) => v.n))]
+      .map((n) => porN.get(n)!)
+      .filter((a) => a.score > 0)
+      .sort((a, b) => b.score - a.score || a.nome.localeCompare(b.nome))
+      .slice(0, 12),
   };
 }
