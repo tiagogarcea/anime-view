@@ -32,7 +32,8 @@ Duas pastas na Área de Trabalho:
 - `Anime-View-Git/` — clone do GitHub, sem `node_modules`. Para publicar: copie os arquivos alterados
   para cá e faça commit + push (ou rode `Git_Push.bat`, que faz `git add .`, commit com data/hora e push).
 
-A página relê a planilha a cada 60 s (`revalidate` em `app/page.tsx`).
+A planilha é relida no máximo a cada 60 s (cache de cada fetch; `revalidate` em `app/page.tsx`).
+A página em si é montada a cada visita, porque lê o `?aba=` da URL.
 
 ### Variáveis de ambiente (todas opcionais)
 
@@ -92,9 +93,11 @@ Imagens coladas e a URL por trás do texto "Link" não saem no gviz: vêm do `do
 
 ## Funcionalidades
 
-Três abas no topo: **ANIME LIST**, **STATS** e **TEMPORADA**. A aba fica no endereço (`/#stats`,
-`/#temporada`; sem `#` = Anime List): o F5 recarrega na mesma aba, o link abre direto nela e o
-voltar/avançar do navegador troca de aba.
+Três abas no topo: **ANIME LIST**, **STATS** e **TEMPORADA**. A aba fica no endereço
+(`/?aba=stats`, `/?aba=temporada`; sem `?aba` = Anime List). O servidor lê esse valor e já monta a
+página na aba certa, então o F5 continua na mesma aba sem passar pela Anime List; o link abre direto
+nela e o voltar/avançar do navegador troca de aba. Links antigos com `#stats` / `#temporada` são
+convertidos sozinhos. Abas válidas: `lib/tabs.ts`.
 
 ### Anime List
 - "Puxada do dia": sorteio ponderado (peso = score, mínimo 1; favorito dobra; +0,1 por mês desde a
@@ -181,12 +184,13 @@ Instalação e atualização (mantendo a mesma URL) estão descritas no topo do 
 ```
 app/
   layout.tsx            fontes e metadados
-  page.tsx              lê as 3 abas no servidor (revalidate 60 s) e monta <App>
+  page.tsx              lê as 3 abas da planilha (cache de 60 s) e o ?aba= da URL; monta <App>
   globals.css           todo o visual
   api/temporada/        rota POST que grava na aba Temporada Atual
   icon.svg, apple-icon.png
 lib/
   types.ts              tipo Anime, raridades (tierOf)
+  tabs.ts               abas do site e validação do ?aba= (servidor e cliente)
   sheet.ts              CSV "Animes Completos" → Anime[]
   history.ts            CSV "Historico" → Viewing[], ligação por nome
   temporada.ts          gviz "Temporada Atual" (com Url Imagem) + streaming/link/capas reserva
@@ -197,7 +201,7 @@ lib/
   format.ts             datas, números, cor por nome
   hdCovers.ts           lista das capas ampliadas em public/covers/
 components/
-  App.tsx               estado (aba no #hash, filtros, ordenação, modal)
+  App.tsx               estado (aba no ?aba=, filtros, ordenação, modal)
   Header.tsx            marca e abas
   Hero.tsx              puxada do dia
   KpiStrip.tsx, FilterBar.tsx, FilterDrawer.tsx

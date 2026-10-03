@@ -15,17 +15,25 @@ import FilterDrawer from "./FilterDrawer";
 import Collection from "./Collection";
 import DetailModal from "./DetailModal";
 import Stats from "./Stats";
+import { Tab, tabValida } from "@/lib/tabs";
 
-export type Tab = "deck" | "stats" | "temporada";
-const TABS: Tab[] = ["deck", "stats", "temporada"];
-/** Aba guardada no endereço (#stats, #temporada) para o F5 voltar nela; sem # = deck. */
-const tabDoHash = (): Tab => {
-  const h = window.location.hash.slice(1) as Tab;
-  return TABS.includes(h) ? h : "deck";
+export type { Tab };
+/**
+ * Aba guardada no endereço (?aba=stats, ?aba=temporada; sem = deck). Fica na busca, não no #, para o
+ * servidor já montar a página na aba certa: o F5 não passa pela Anime List antes.
+ */
+const tabDaUrl = (): Tab => tabValida(new URLSearchParams(window.location.search).get("aba"));
+const urlDaTab = (t: Tab) => {
+  const q = new URLSearchParams(window.location.search);
+  if (t === "deck") q.delete("aba"); else q.set("aba", t);
+  const s = q.toString();
+  return window.location.pathname + (s ? `?${s}` : "");
 };
 
-export default function App({ animes, history, temporada }: { animes: Anime[]; history: Viewing[]; temporada: SeasonItem[] }) {
-  const [tab, setTabState] = useState<Tab>("deck");
+export default function App({ animes, history, temporada, tabInicial }: {
+  animes: Anime[]; history: Viewing[]; temporada: SeasonItem[]; tabInicial: Tab;
+}) {
+  const [tab, setTabState] = useState<Tab>(tabInicial);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [sortKey, setSortKey] = useState<SortKey>(DEFAULT_SORT.key);
   const [sortAsc, setSortAsc] = useState(DEFAULT_SORT.asc);
@@ -36,21 +44,20 @@ export default function App({ animes, history, temporada }: { animes: Anime[]; h
   const result = useMemo(() => applyFilters(animes, filters), [animes, filters]);
   const rows = useMemo(() => sortRows(result.rows, sortKey, sortAsc), [result.rows, sortKey, sortAsc]);
 
-  // Lê a aba do endereço só no cliente (no servidor não há hash) e acompanha voltar/avançar do navegador.
+  // Voltar/avançar do navegador troca de aba. Links antigos com #stats / #temporada viram ?aba=.
   useEffect(() => {
-    const sync = () => setTabState(tabDoHash());
-    sync();
-    window.addEventListener("hashchange", sync);
+    const antigo = tabValida(window.location.hash.slice(1));
+    if (antigo !== "deck") {
+      window.history.replaceState(null, "", urlDaTab(antigo));
+      setTabState(antigo);
+    }
+    const sync = () => setTabState(tabDaUrl());
     window.addEventListener("popstate", sync);
-    return () => {
-      window.removeEventListener("hashchange", sync);
-      window.removeEventListener("popstate", sync);
-    };
+    return () => window.removeEventListener("popstate", sync);
   }, []);
   const setTab = (t: Tab) => {
     setTabState(t);
-    const url = t === "deck" ? window.location.pathname + window.location.search : `#${t}`;
-    if (tabDoHash() !== t) window.history.pushState(null, "", url);
+    if (tabDaUrl() !== t) window.history.pushState(null, "", urlDaTab(t));
   };
 
   // Sorteio só no cliente (Math.random no servidor quebraria a hidratação).
