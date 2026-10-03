@@ -23,9 +23,16 @@ No Windows, se o PowerShell bloquear o `npm.ps1`, use `npm.cmd run dev`.
 
 ## Deploy (Vercel)
 
-1. Suba esta pasta para um repositório no GitHub (ainda não é um repositório git).
-2. Na Vercel: Add New › Project › importe o repositório. Nada obrigatório a configurar.
-3. A página relê a planilha a cada 60 s (`revalidate` em `app/page.tsx`).
+Repositório: `github.com/tiagogarcea/anime-view` (branch `main`). A Vercel publica sozinha a cada push.
+
+Duas pastas na Área de Trabalho:
+
+- `Anime-View/` — pasta de trabalho (tem `node_modules`; é onde se roda `npm run dev` e `npm run build`).
+  **Não** é um repositório git.
+- `Anime-View-Git/` — clone do GitHub, sem `node_modules`. Para publicar: copie os arquivos alterados
+  para cá e faça commit + push (ou rode `Git_Push.bat`, que faz `git add .`, commit com data/hora e push).
+
+A página relê a planilha a cada 60 s (`revalidate` em `app/page.tsx`).
 
 ### Variáveis de ambiente (todas opcionais)
 
