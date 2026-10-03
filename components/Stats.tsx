@@ -244,9 +244,10 @@ function Heatmap({ rows }: { rows: Anime[] }) {
           </div>
           <div className="heat-dow">{DOW.map((d, i) => <span key={i}>{d}</span>)}</div>
           <div className="heat-cells" style={{ gridTemplateColumns: `repeat(${weeks}, minmax(10px, 1fr))` }}>
-            {cells.map((c) => (
+            {cells.map((c, i) => (
               <span key={c.key}
-                className={c.inYear ? `hc l${level(c.list.length)}` : "hc out"}
+                // nas primeiras e últimas semanas o tooltip abre para dentro, senão sai pela borda
+                className={c.inYear ? `hc l${level(c.list.length)}${i / 7 < 8 ? " tip-l" : i / 7 >= weeks - 8 ? " tip-r" : ""}` : "hc out"}
                 data-tip={c.inYear ? `${fmtDate(c.key)} · ${c.list.length ? c.list.map((a) => a.nome).slice(0, 3).join(", ") + (c.list.length > 3 ? ` +${c.list.length - 3}` : "") : "nada"}` : undefined} />
             ))}
           </div>

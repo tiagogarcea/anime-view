@@ -111,7 +111,8 @@ voltar/avançar do navegador troca de aba.
 Raridade das cartas: score 10 = SSR, 9 = SR, 8 = R, até 7 = N (`tierOf` em `lib/types.ts`).
 
 ### Stats
-Heatmap de atividade por ano (com seletor e nomes no tooltip), distribuição por score, ano de
+Heatmap de atividade por ano (com seletor e nomes no tooltip; em tela larga a grade não rola, para o
+tooltip da segunda-feira não ser cortado, e nas primeiras/últimas semanas ele abre para dentro), distribuição por score, ano de
 lançamento, assistidos ao longo do tempo (por mês; a partir de jan/2023 usa a aba Historico e conta
 rewatches), top 15 estúdios, top 12 temas, gêneros, demografia (barra empilhada) e mais reassistidos
 (top 24).

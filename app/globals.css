@@ -334,6 +334,10 @@ select, .dir {
 .hc.l0 { background: #16161f; } .hc.l1 { background: #4a0f16; } .hc.l2 { background: #9a1a26; } .hc.l3 { background: var(--red); }
 .hc.out { background: transparent; }
 .hc:not(.out):hover { outline: 1px solid var(--cyan); }
+.hc.tip-l:hover::after { left: 0; transform: none; }
+.hc.tip-r:hover::after { left: auto; right: 0; transform: none; }
+/* em tela larga a grade cabe inteira: sem rolagem, o tooltip da segunda-feira não é cortado em cima */
+@media (min-width: 900px) { .heat-scroll { overflow: visible; } }
 
 .rw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 14px; }
 .rw-card { display: flex; flex-direction: column; gap: 6px; padding: 0; border: 0; background: none; text-align: left; }
