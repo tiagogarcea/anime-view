@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { DIAS, hojeDia, nomeDoSite, Semanal, SeasonItem, semanalEfetivo } from "@/lib/temporada";
+import { DIAS, hojeDia, nomeDoSite, Semanal, SeasonItem, semanalAoMarcar, semanalEfetivo } from "@/lib/temporada";
 import { fmtDate, hueOf } from "@/lib/format";
 
 const SENHA_KEY = "anime-view-senha";
@@ -14,7 +14,8 @@ const hojeIso = () => {
 
 type Valores = { ep: number | null; sem: Semanal };
 type Campo = "episodio" | "semanal";
-type Pedido = { numero: number; campo: Campo; novo: Valores; original: Valores };
+/** autoSem: status para gravar logo depois do episódio (✓ automático ao chegar no último lançado) */
+type Pedido = { numero: number; campo: Campo; novo: Valores; original: Valores; autoSem?: Semanal };
 type Estado = "salvando" | "salvo" | "";
 
 const STATUS: { v: Exclude<Semanal, "">; icon: string; label: string; cls: string }[] = [
@@ -48,9 +49,9 @@ export default function Season({ items }: { items: SeasonItem[] }) {
   const valor = (n: number): Valores => vals.get(n) ?? { ep: null, sem: "" };
   const marcaEstado = (n: number, e: Estado) => setEstado((m) => new Map(m).set(n, e));
 
-  async function salvar(numero: number, campo: Campo, novo: Valores, senhaUsada = senha, original = valor(numero)) {
+  async function salvar(numero: number, campo: Campo, novo: Valores, senhaUsada = senha, original = valor(numero), autoSem?: Semanal) {
     setVals((m) => new Map(m).set(numero, novo));
-    if (!senhaUsada) { setPedirSenha({ numero, campo, novo, original }); return; }
+    if (!senhaUsada) { setPedirSenha({ numero, campo, novo, original, autoSem }); return; }
     marcaEstado(numero, "salvando");
     setAviso("");
     try {
@@ -65,7 +66,7 @@ export default function Season({ items }: { items: SeasonItem[] }) {
       if (r.status === 401) {
         guardarSenha(""); setSenha("");
         marcaEstado(numero, "");
-        setPedirSenha({ numero, campo, novo, original });
+        setPedirSenha({ numero, campo, novo, original, autoSem });
         setAviso("Senha incorreta.");
         return;
       }
@@ -79,6 +80,10 @@ export default function Season({ items }: { items: SeasonItem[] }) {
       }
       marcaEstado(numero, "salvo");
       setTimeout(() => setEstado((m) => (m.get(numero) === "salvo" ? new Map(m).set(numero, "") : m)), 2500);
+      // episódio gravado e chegou no último lançado: grava também o ✓
+      if (campo === "episodio" && autoSem && autoSem !== novo.sem) {
+        await salvar(numero, "semanal", { ep: novo.ep, sem: autoSem }, senhaUsada, novo);
+      }
     } catch {
       setVals((m) => new Map(m).set(numero, original));
       marcaEstado(numero, "");
@@ -134,7 +139,10 @@ export default function Season({ items }: { items: SeasonItem[] }) {
               item={i}
               hoje={hoje}
               estado={estado.get(i.numero) ?? ""}
-              onEpisodio={(ep) => salvar(i.numero, "episodio", { ep, sem: valor(i.numero).sem })}
+              onEpisodio={(ep) => {
+                const atual = valor(i.numero);
+                salvar(i.numero, "episodio", { ep, sem: atual.sem }, senha, atual, semanalAoMarcar(ep, i, atual.sem));
+              }}
               onSemanal={(sem) => salvar(i.numero, "semanal", { ep: valor(i.numero).ep, sem })}
             />
           ))}
@@ -153,7 +161,7 @@ export default function Season({ items }: { items: SeasonItem[] }) {
             guardarSenha(s); setSenha(s);
             const p = pedirSenha;
             setPedirSenha(null);
-            salvar(p.numero, p.campo, p.novo, s, p.original);
+            salvar(p.numero, p.campo, p.novo, s, p.original, p.autoSem);
           }}
         />
       )}

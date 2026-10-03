@@ -17,7 +17,24 @@ npm install
 npm run dev        # http://localhost:3000
 npm run build      # build de produção (confere tipos)
 npm run start      # serve o build
+npm test           # testes das regras (tests/*.test.ts)
 ```
+
+## Testes
+
+`npm test` roda os testes com o test runner do Node (via `tsx`, sem servidor nem planilha):
+
+- `tests/temporada.test.ts` — regra da estreia (`-` → `X` na segunda da semana), ✓ automático ao
+  marcar o último episódio lançado (e que nunca vira `X` sozinho, caso Bleach), leitura da aba
+  Temporada Atual (gviz), escolha do resultado do AniList, nome do site pelo link.
+- `tests/planilha.test.ts` — leitura das abas Animes Completos e Historico (formatos de data,
+  colunas, ligação pelo nome), raridade.
+- `tests/filtros.test.ts` — filtros, ordenação, `?aba=` e filtros no endereço.
+- `tests/appsScript.test.ts` — roda o `apps-script/Temporada.gs` de verdade numa planilha falsa, com
+  data e fuso controlados: gatilho diário (estreias, virada semanal de `V`, fuso da planilha),
+  links/imagens das células e senha do `doPost`.
+
+Rode `npm test` antes de publicar; ao mudar uma regra, atualize o teste correspondente.
 
 No Windows, se o PowerShell bloquear o `npm.ps1`, use `npm.cmd run dev`.
 
@@ -25,15 +42,12 @@ No Windows, se o PowerShell bloquear o `npm.ps1`, use `npm.cmd run dev`.
 
 Repositório: `github.com/tiagogarcea/anime-view` (branch `main`). A Vercel publica sozinha a cada push.
 
-Duas pastas na Área de Trabalho:
-
-- `Anime-View/` — pasta de trabalho (tem `node_modules`; é onde se roda `npm run dev` e `npm run build`).
-  **Não** é um repositório git.
-- `Anime-View-Git/` — clone do GitHub, sem `node_modules`. Para publicar: copie os arquivos alterados
-  para cá e faça commit + push (ou rode `Git_Push.bat`, que faz `git add .`, commit com data/hora e push).
+A pasta `Anime-View/` é o próprio repositório: para publicar, `npm test`, `npm run build`, commit e
+push (ou rode `Git_Push.bat`, que faz `git add .`, commit com data/hora e push). A antiga
+`Anime-View-Git/` não é mais usada.
 
 A planilha é relida no máximo a cada 60 s (cache de cada fetch; `revalidate` em `app/page.tsx`).
-A página em si é montada a cada visita, porque lê o `?aba=` da URL.
+A página em si é montada a cada visita, porque lê a aba e os filtros da URL.
 
 ### Variáveis de ambiente (todas opcionais)
 
@@ -108,6 +122,11 @@ convertidos sozinhos. Abas válidas: `lib/tabs.ts`.
 - Busca por nome JP ou EN, filtros em cascata com contagem por opção (score, datas De/Até, season,
   ano, estúdio, gênero, tema, demografia, favorito, rewatched, raridade) na barra e na gaveta.
 - Ordenação por N°, Nome, Score, Episódios, Visto em, Ano, Studio; padrão "Visto em" decrescente.
+- Filtros, busca e ordenação ficam no endereço (`lib/urlFiltros.ts`), lidos pelo servidor: o F5 não
+  os perde e dá para salvar ou compartilhar uma busca. Só entra o que difere do padrão. Parâmetros:
+  `busca`, `score` e `eps` (faixa `min-max`, ex.: `8-10`, `8-`), `de` e `ate` (AAAA-MM-DD), `season`,
+  `ano`, `estudio`, `genero`, `tema`, `demografia`, `fav`, `rewatch`, `raridade` (repetidos para vários
+  valores), `ordem` e `crescente` (`1`/`0`). Ex.: `/?raridade=SSR&raridade=SR&ano=2024&ordem=score&crescente=0`.
 - Cartas com moldura por raridade; clique abre modal com detalhes, comentário, histórico de
   visualizações, links MAL / Crunchyroll e streaming.
 
@@ -132,6 +151,9 @@ Tudo responde aos filtros.
   ("ASSISTIR NO CRUNCHYROLL"). Só logo, sem link: mostra o logo sem ser clicável.
 - Dá para mudar o status e o episódio (botões − / + ou digitando; salva 0,5 s depois de parar).
   A gravação vai para a planilha via `POST /api/temporada` → Apps Script.
+- ✓ automático: ao marcar um episódio que alcança o último lançado segundo o AniList (ex.: 12 de 12),
+  o status também é gravado como `V` (`semanalAoMarcar`). Nunca vira `X` sozinho: o AniList às vezes
+  conta episódios que atrasaram (Bleach: diz 10 lançados, só saíram 8), então aí o ✓ é manual.
 - Na primeira gravação pede uma senha, que fica salva no `localStorage` do navegador
   (`anime-view-senha`). Senha errada → pede de novo.
 - Regra da estreia: um anime marcado `-` (não estreou) vira `X` (não visto) **a partir da
@@ -191,6 +213,7 @@ app/
 lib/
   types.ts              tipo Anime, raridades (tierOf)
   tabs.ts               abas do site e validação do ?aba= (servidor e cliente)
+  urlFiltros.ts         filtros e ordenação ↔ parâmetros do endereço (servidor e cliente)
   sheet.ts              CSV "Animes Completos" → Anime[]
   history.ts            CSV "Historico" → Viewing[], ligação por nome
   temporada.ts          gviz "Temporada Atual" (com Url Imagem) + streaming/link/capas reserva
@@ -201,7 +224,7 @@ lib/
   format.ts             datas, números, cor por nome
   hdCovers.ts           lista das capas ampliadas em public/covers/
 components/
-  App.tsx               estado (aba no ?aba=, filtros, ordenação, modal)
+  App.tsx               estado (aba, filtros e ordenação, todos no endereço; modal)
   Header.tsx            marca e abas
   Hero.tsx              puxada do dia
   KpiStrip.tsx, FilterBar.tsx, FilterDrawer.tsx
@@ -211,6 +234,7 @@ components/
 apps-script/
   Temporada.gs          script do Google colado na planilha
 public/covers/          capas ampliadas
+tests/                  testes das regras (npm test)
 ```
 
 ## Paridade com o Streamlit (`Anime-Tracker/app.py`)

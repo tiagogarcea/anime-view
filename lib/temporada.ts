@@ -42,7 +42,7 @@ export function normSemanal(v: unknown): Semanal {
 }
 
 /** O JSON do Google vem embrulhado: google.visualization.Query.setResponse({...}); */
-function parseGviz(text: string): SeasonItem[] {
+export function parseGviz(text: string): SeasonItem[] {
   const json = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
   const cols: string[] = json.table.cols.map((c: { label?: string }) => (c.label ?? "").trim());
   const idx = (name: string) => cols.findIndex((c) => c === name);
@@ -73,7 +73,7 @@ function parseGviz(text: string): SeasonItem[] {
 
 // ── AniList: total de episódios e quantos já foram ao ar
 
-type AlMedia = {
+export type AlMedia = {
   episodes: number | null;
   status: string;
   startDate: { year: number | null; month: number | null; day: number | null };
@@ -83,7 +83,7 @@ type AlMedia = {
 const dias = (a: string, b: string) => Math.abs(Date.parse(a) - Date.parse(b)) / 86_400_000;
 
 /** Escolhe o resultado cuja estreia fica a até 30 dias do "Dia de inicio" (evita homônimos). */
-function escolher(cands: AlMedia[], inicio: string | null): AlMedia | null {
+export function escolher(cands: AlMedia[], inicio: string | null): AlMedia | null {
   for (const m of cands) {
     const { year, month, day } = m.startDate;
     if (!inicio) return m;
@@ -93,7 +93,7 @@ function escolher(cands: AlMedia[], inicio: string | null): AlMedia | null {
 }
 
 /** "Tensei shitara Ken deshita II" → também tenta "... 2" e "... 2nd Season". */
-function variantes(nome: string): string[] {
+export function variantes(nome: string): string[] {
   const out = new Set<string>();
   const rom: Record<string, string> = { II: "2", III: "3", IV: "4" };
   const ord: Record<string, string> = { "2": "2nd Season", "3": "3rd Season", "4": "4th Season" };
@@ -199,6 +199,16 @@ export function nomeDoSite(url: string): string {
   } catch {
     return "";
   }
+}
+
+/**
+ * Status depois de marcar o episódio `ep`: se chegou ao último episódio lançado (AniList), vira "V".
+ * Nunca vira "X" sozinho: o AniList às vezes conta episódios que atrasaram (ex.: diz 10 lançados e só
+ * saíram 8), então nesse caso o status fica como estava e é marcado à mão.
+ */
+export function semanalAoMarcar(ep: number | null, item: Pick<SeasonItem, "lancados">, atual: Semanal): Semanal {
+  if (ep !== null && item.lancados && ep >= item.lancados) return "V";
+  return atual;
 }
 
 export const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];

@@ -16,6 +16,7 @@ import Collection from "./Collection";
 import DetailModal from "./DetailModal";
 import Stats from "./Stats";
 import { Tab, tabValida } from "@/lib/tabs";
+import { Busca, escreverBusca, lerBusca } from "@/lib/urlFiltros";
 
 export type { Tab };
 /**
@@ -30,13 +31,14 @@ const urlDaTab = (t: Tab) => {
   return window.location.pathname + (s ? `?${s}` : "");
 };
 
-export default function App({ animes, history, temporada, tabInicial }: {
-  animes: Anime[]; history: Viewing[]; temporada: SeasonItem[]; tabInicial: Tab;
+export default function App({ animes, history, temporada, tabInicial, buscaInicial }: {
+  animes: Anime[]; history: Viewing[]; temporada: SeasonItem[]; tabInicial: Tab; buscaInicial: Busca;
 }) {
   const [tab, setTabState] = useState<Tab>(tabInicial);
-  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
-  const [sortKey, setSortKey] = useState<SortKey>(DEFAULT_SORT.key);
-  const [sortAsc, setSortAsc] = useState(DEFAULT_SORT.asc);
+  // filtros e ordenação vêm do endereço (lidos no servidor), para o F5 não perdê-los
+  const [filters, setFilters] = useState<Filters>(buscaInicial.filters);
+  const [sortKey, setSortKey] = useState<SortKey>(buscaInicial.sortKey);
+  const [sortAsc, setSortAsc] = useState(buscaInicial.sortAsc);
   const [drawer, setDrawer] = useState(false);
   const [pick, setPick] = useState<Anime | null>(null);
   const [open, setOpen] = useState<Anime | null>(null);
@@ -51,7 +53,13 @@ export default function App({ animes, history, temporada, tabInicial }: {
       window.history.replaceState(null, "", urlDaTab(antigo));
       setTabState(antigo);
     }
-    const sync = () => setTabState(tabDaUrl());
+    const sync = () => {
+      setTabState(tabDaUrl());
+      const b = lerBusca(new URLSearchParams(window.location.search));
+      setFilters(b.filters);
+      setSortKey(b.sortKey);
+      setSortAsc(b.sortAsc);
+    };
     window.addEventListener("popstate", sync);
     return () => window.removeEventListener("popstate", sync);
   }, []);
@@ -59,6 +67,12 @@ export default function App({ animes, history, temporada, tabInicial }: {
     setTabState(t);
     if (tabDaUrl() !== t) window.history.pushState(null, "", urlDaTab(t));
   };
+
+  // Cada mudança de filtro/ordenação reescreve o endereço (replace: não enche o histórico do voltar).
+  useEffect(() => {
+    const busca = escreverBusca(new URLSearchParams(window.location.search), { filters, sortKey, sortAsc });
+    if (busca !== window.location.search) window.history.replaceState(null, "", window.location.pathname + busca);
+  }, [filters, sortKey, sortAsc]);
 
   // Sorteio só no cliente (Math.random no servidor quebraria a hidratação).
   useEffect(() => {
