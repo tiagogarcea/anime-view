@@ -116,6 +116,8 @@ Tudo responde aos filtros.
 
 ### Temporada
 - Animes da temporada agrupados por dia da semana, com o dia de hoje destacado.
+- O card inteiro (fundo, borda e linha de informações) fica na cor do status: verde = em dia (`V`),
+  vermelho = episódio novo não visto (`X`), azul = não estreou (`-`). Sem marcação fica neutro.
 - Para cada um: status semanal (✓ / ✕ / —), capa, data de estreia, último episódio visto,
   "N de M lançados" (AniList) ou "completo".
 - Botão "▶ ASSISTIR" abaixo do nome: logo do streaming (`Onde assistir?`) + link (`Link`), abre em
