@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { DIAS, hojeDia, Semanal, SeasonItem, semanalEfetivo } from "@/lib/temporada";
+import { DIAS, hojeDia, nomeDoSite, Semanal, SeasonItem, semanalEfetivo } from "@/lib/temporada";
 import { fmtDate, hueOf } from "@/lib/format";
 
 const SENHA_KEY = "anime-view-senha";
@@ -221,6 +221,7 @@ function Linha({ item, hoje, estado, onEpisodio, onSemanal }: {
           {estado === "salvando" && <span className="saving"> · salvando…</span>}
           {estado === "salvo" && <span className="saved"> · salvo ✓</span>}
         </div>
+        <Onde item={item} />
       </div>
       <div className="sstep">
         <button type="button" onClick={() => onEpisodio(visto > 1 ? visto - 1 : null)} disabled={!item.ultimoEp} aria-label={`Diminuir episódio de ${item.nome}`}>−</button>
@@ -236,6 +237,30 @@ function Linha({ item, hoje, estado, onEpisodio, onSemanal }: {
         <span className="stotal" title="Total de episódios (AniList)">/ {item.total ?? "?"}</span>
       </div>
     </div>
+  );
+}
+
+/** Coluna "Onde assistir?" (logo) + coluna "Link". Com link vira botão; sem link, só o logo. */
+function Onde({ item }: { item: SeasonItem }) {
+  const [quebrado, setQuebrado] = useState(false);
+  const logo = quebrado ? "" : item.streamingImg;
+  if (!logo && !item.link) return null;
+  const site = item.link ? nomeDoSite(item.link) : "";
+  const conteudo = (
+    <>
+      {logo && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={logo} alt={site} loading="lazy" referrerPolicy="no-referrer" onError={() => setQuebrado(true)} />
+      )}
+      {item.link && <span>▶ ASSISTIR{!logo && site ? ` NO ${site.toUpperCase()}` : ""}</span>}
+    </>
+  );
+  return item.link ? (
+    <a className="swatch" href={item.link} target="_blank" rel="noopener noreferrer" title={site ? `Assistir no ${site}` : "Assistir"}>
+      {conteudo}
+    </a>
+  ) : (
+    <span className="swatch">{conteudo}</span>
   );
 }
 

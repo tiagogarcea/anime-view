@@ -53,7 +53,8 @@ Tudo vem de uma única planilha do Google, lida no servidor em `app/page.tsx`:
 | **Animes Completos** (`gid=1713940120`) | CSV público (`lib/sheet.ts`) | 60 s | Página mostra "Erro ao carregar a planilha" |
 | **Historico** (`gid=1281634781`) | CSV público (`lib/history.ts`) | 60 s | Site segue só com o "Last seen" |
 | **Temporada Atual** | JSON do gviz (`lib/temporada.ts`) | 60 s, tag `temporada` | Aba Temporada mostra "SEM DADOS" |
-| Capas da Temporada Atual | Coluna `Url Imagem` (gviz); reserva: GET no Apps Script | 60 s / 1 h | Mostra a inicial do nome |
+| Capas da Temporada Atual | Coluna `Url Imagem` (gviz); reserva: GET no Apps Script | 60 s | Mostra a inicial do nome |
+| Streaming e link da Temporada | GET no Apps Script (colunas `Onde assistir?` e `Link`) | 60 s, tag `temporada` | Botão "assistir" não aparece |
 | Episódios (total / lançados) | GraphQL do AniList | 1 h | Mostra "?" |
 
 ### Aba "Animes Completos"
@@ -83,7 +84,9 @@ de visualizações no modal de detalhes.
 Colunas: `Número`, `Anime`, `Dia de inicio` (data), `Dia da semana` ("Segunda"…"Domingo"),
 `Último episódio visto`, `Semanal`, `Url Imagem` (URL da capa, ex.:
 `https://cdn.myanimelist.net/images/anime/1154/159987l.jpg`) e `Imagem` (imagem colada na célula
-ou `=IMAGE("url")`, usada só quando `Url Imagem` está vazia; o Apps Script só é chamado nesse caso).
+ou `=IMAGE("url")`, usada só quando `Url Imagem` está vazia), `Onde assistir?` (logo do streaming
+colado na célula) e `Link` (texto com hiperlink, `=HYPERLINK("url"; ...)` ou a URL digitada).
+Imagens coladas e a URL por trás do texto "Link" não saem no gviz: vêm do `doGet` do Apps Script.
 
 `Semanal`: `V` = em dia, `X` = episódio novo não visto, `-` = não estreou, vazio = sem marcação.
 
@@ -115,6 +118,9 @@ Tudo responde aos filtros.
 - Animes da temporada agrupados por dia da semana, com o dia de hoje destacado.
 - Para cada um: status semanal (✓ / ✕ / —), capa, data de estreia, último episódio visto,
   "N de M lançados" (AniList) ou "completo".
+- Botão "▶ ASSISTIR" abaixo do nome: logo do streaming (`Onde assistir?`) + link (`Link`), abre em
+  nova aba. Sem logo (ou se o logo não carregar), mostra o nome do site tirado da URL
+  ("ASSISTIR NO CRUNCHYROLL"). Só logo, sem link: mostra o logo sem ser clicável.
 - Dá para mudar o status e o episódio (botões − / + ou digitando; salva 0,5 s depois de parar).
   A gravação vai para a planilha via `POST /api/temporada` → Apps Script.
 - Na primeira gravação pede uma senha, que fica salva no `localStorage` do navegador
@@ -141,8 +147,8 @@ Em caso de sucesso, invalida o cache da tag `temporada` e da página `/`.
 
 Ponte entre o site e a aba "Temporada Atual". Não roda no Next: é colado na própria planilha.
 
-- `doGet` → `{ itens: [{ numero, imagem }] }` com as capas coladas nas células (reserva para linhas
-  sem `Url Imagem`).
+- `doGet` → `{ itens: [{ numero, imagem, streaming, link }] }`: capa colada em `Imagem` (reserva para
+  linhas sem `Url Imagem`), logo colado em `Onde assistir?` e URL da coluna `Link`.
 - `doPost` → grava episódio ou status, conferindo a senha da propriedade de script `SENHA`.
 - `atualizarEstreias` (gatilho diário às 6h, criado rodando `instalarGatilho` uma vez):
   `-` → `X` na semana da estreia; toda segunda, `V` → `X` (menos quem já completou todos os
@@ -159,7 +165,7 @@ Instalação e atualização (mantendo a mesma URL) estão descritas no topo do 
   Real-ESRGAN (modelo `realesr-animevideov3`, fiel à arte) e ficam em `public/covers/`, listadas em
   `lib/hdCovers.ts`. Anime novo na planilha não precisa de nada: usa a versão grande do MyAnimeList.
 - Temporada: capa da coluna `Url Imagem` como está; se vier da coluna `Imagem` (Google), é reduzida
-  de 2048 px para 360 px (`=s360`).
+  de 2048 px para 360 px (`=s360`). Logos do streaming são reduzidos para 96 px (`=s96`).
 
 ## Estrutura
 
@@ -174,7 +180,8 @@ lib/
   types.ts              tipo Anime, raridades (tierOf)
   sheet.ts              CSV "Animes Completos" → Anime[]
   history.ts            CSV "Historico" → Viewing[], ligação por nome
-  temporada.ts          gviz "Temporada Atual" (com Url Imagem) + capas reserva (Apps Script) + AniList
+  temporada.ts          gviz "Temporada Atual" (com Url Imagem) + streaming/link/capas reserva
+                        (Apps Script) + AniList
   filters.ts            filtros em cascata e ordenação
   stats.ts              agregações dos KPIs e gráficos
   suggest.ts            sorteio ponderado da puxada do dia
@@ -187,7 +194,7 @@ components/
   KpiStrip.tsx, FilterBar.tsx, FilterDrawer.tsx
   Collection.tsx, Card.tsx, Poster.tsx, DetailModal.tsx
   Stats.tsx             gráficos
-  Season.tsx            aba Temporada (status, episódios, senha)
+  Season.tsx            aba Temporada (status, episódios, onde assistir, senha)
 apps-script/
   Temporada.gs          script do Google colado na planilha
 public/covers/          capas ampliadas

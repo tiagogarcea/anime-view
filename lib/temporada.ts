@@ -14,6 +14,10 @@ export type SeasonItem = {
   ultimoEp: number | null;
   semanal: Semanal;
   img: string;
+  /** logo do streaming colado na coluna "Onde assistir?" (vem do script do Google) */
+  streamingImg: string;
+  /** URL da coluna "Link": onde assistir (vem do script do Google) */
+  link: string;
   /** do AniList: total de episódios da temporada e quantos já foram ao ar (null = não sabe) */
   total: number | null;
   lancados: number | null;
@@ -21,7 +25,7 @@ export type SeasonItem = {
 
 const SHEET_ID = "1a6Ylv7yKu8yb1DJkYpZynTSedbOzTUC_ti35fufDyWI";
 
-/** App da Web do script em apps-script/Temporada.gs. Sem a SENHA ele só devolve as capas. */
+/** App da Web do script em apps-script/Temporada.gs. Sem a SENHA ele só devolve capas, streaming e links. */
 export const SCRIPT_URL =
   process.env.TEMPORADA_SCRIPT_URL ||
   "https://script.google.com/macros/s/AKfycbw80HhY59_3apd7ovE2_9_weZYq1JX1hXOk4ZSHdz9zWzHEjxh6MabjraoX3MoPRcVVHQ/exec";
@@ -61,7 +65,7 @@ function parseGviz(text: string): SeasonItem[] {
       diaSemana: String(cell(r.c, iDia)?.v ?? "").trim(),
       ultimoEp: Number.isFinite(ep) ? ep : null,
       semanal: normSemanal(cell(r.c, iSem)?.v),
-      img: url.startsWith("http") ? url : "", total: null, lancados: null,
+      img: url.startsWith("http") ? url : "", streamingImg: "", link: "", total: null, lancados: null,
     });
   }
   return out;
@@ -143,17 +147,23 @@ export async function loadTemporada(): Promise<SeasonItem[]> {
     if (!res.ok) return [];
     const itens = parseGviz(await res.text());
     await Promise.all([
-      // capa vem da coluna "Url Imagem"; quem não tiver URL cai na imagem colada na coluna "Imagem",
-      // que só sai pelo script do Google
+      // imagens coladas nas células e o link por trás do texto "Link" só saem pelo script do Google.
+      // A capa vem da coluna "Url Imagem"; a colada na coluna "Imagem" é só reserva.
       (async () => {
-        if (itens.every((it) => it.img)) return;
         try {
-          const r = await fetch(SCRIPT_URL, { next: { revalidate: 3600 } });
+          const r = await fetch(SCRIPT_URL, { next: { revalidate: 60, tags: ["temporada"] } });
           const j = await r.json();
-          const imgs = new Map<number, string>((j.itens ?? []).map((x: { numero: number; imagem: string }) => [Number(x.numero), x.imagem]));
-          // o Google devolve a capa em 2048 px; 360 px deixa a miniatura nítida
-          for (const it of itens) if (!it.img) it.img = (imgs.get(it.numero) ?? "").replace(/=s\d+(?=[?&]|$)/, "=s360");
-        } catch { /* sem capas: o site mostra a inicial */ }
+          type Extra = { numero: number; imagem?: string; streaming?: string; link?: string };
+          const extras = new Map<number, Extra>((j.itens ?? []).map((x: Extra) => [Number(x.numero), x]));
+          for (const it of itens) {
+            const x = extras.get(it.numero);
+            if (!x) continue;
+            // o Google devolve as imagens em 2048 px: 360 px basta para a capa, 96 px para o logo
+            if (!it.img) it.img = (x.imagem ?? "").replace(/=s\d+(?=[?&]|$)/, "=s360");
+            it.streamingImg = (x.streaming ?? "").replace(/=s\d+(?=[?&]|$)/, "=s96");
+            it.link = /^https?:\/\//i.test(x.link ?? "") ? x.link! : "";
+          }
+        } catch { /* sem script: sem streaming/link, e capa sem URL mostra a inicial */ }
       })(),
       completarComAniList(itens).catch(() => { /* sem AniList: total fica "?" */ }),
     ]);
@@ -178,6 +188,17 @@ export function segundaDa(iso: string): string {
 export function semanalEfetivo(item: Pick<SeasonItem, "semanal" | "inicio">, hoje: string): Semanal {
   if (item.semanal === "-" && item.inicio && hoje && hoje >= segundaDa(item.inicio)) return "X";
   return item.semanal;
+}
+
+/** "https://www.crunchyroll.com/..." → "Crunchyroll" (para o texto do botão quando não há logo). */
+export function nomeDoSite(url: string): string {
+  try {
+    const partes = new URL(url).hostname.replace(/^www\./, "").split(".");
+    const nome = partes.length > 2 && partes[partes.length - 2].length <= 3 ? partes[partes.length - 3] : partes[partes.length - 2];
+    return nome.charAt(0).toUpperCase() + nome.slice(1);
+  } catch {
+    return "";
+  }
 }
 
 export const DIAS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];

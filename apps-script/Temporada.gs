@@ -11,7 +11,8 @@
  *    Autorize o acesso quando pedir e copie a URL do app da Web (termina em /exec).
  * 4. Coloque essa URL em SCRIPT_URL (lib/temporada.ts) ou na variável TEMPORADA_SCRIPT_URL da Vercel.
  *
- * GET  → lista { numero, imagem } para o site mostrar as capas coladas na coluna "Imagem".
+ * GET  → lista { numero, imagem, streaming, link }: capa colada na coluna "Imagem", logo do streaming
+ *        colado na coluna "Onde assistir?" e URL da coluna "Link".
  * POST → { senha, numero, episodio } grava o episódio na coluna "Último episódio visto";
  *        { senha, numero, semanal: "V" | "X" | "-" | "" } grava o status na coluna "Semanal".
  *
@@ -31,18 +32,28 @@ const COL_EPISODIO = "Último episódio visto";
 const COL_SEMANAL = "Semanal";
 const COL_INICIO = "Dia de inicio";
 const COL_NOME = "Anime";
+const COL_STREAMING = "Onde assistir?";
+const COL_LINK = "Link";
 const SEMANAL_VALIDOS = ["V", "X", "-", ""];
 
 function doGet() {
   const { sheet, values, header } = lerAba();
   const formulas = sheet.getDataRange().getFormulas();
+  const ricos = sheet.getDataRange().getRichTextValues();
   const cNum = coluna(values[header], COL_NUMERO);
   const cImg = coluna(values[header], COL_IMAGEM);
+  const cStr = coluna(values[header], COL_STREAMING);
+  const cLink = coluna(values[header], COL_LINK);
   const itens = [];
   for (let r = header + 1; r < values.length; r++) {
     const numero = Number(values[r][cNum]);
     if (!numero) continue;
-    itens.push({ numero: numero, imagem: cImg >= 0 ? urlDaImagem(values[r][cImg], formulas[r][cImg]) : "" });
+    itens.push({
+      numero: numero,
+      imagem: cImg >= 0 ? urlDaImagem(values[r][cImg], formulas[r][cImg]) : "",
+      streaming: cStr >= 0 ? urlDaImagem(values[r][cStr], formulas[r][cStr]) : "",
+      link: cLink >= 0 ? urlDoLink(values[r][cLink], formulas[r][cLink], ricos[r][cLink]) : "",
+    });
   }
   return json({ ok: true, itens: itens });
 }
@@ -203,6 +214,21 @@ function urlDaImagem(valor, formula) {
   }
   const m = String(formula || "").match(/IMAGE\(\s*"([^"]+)"/i);
   return m ? m[1] : "";
+}
+
+/** Link na célula: texto com hiperlink (Inserir › Link), =HYPERLINK("url"; ...) ou a própria URL digitada. */
+function urlDoLink(valor, formula, rico) {
+  if (rico) {
+    try {
+      if (rico.getLinkUrl()) return rico.getLinkUrl();
+      const runs = rico.getRuns();
+      for (let i = 0; i < runs.length; i++) if (runs[i].getLinkUrl()) return runs[i].getLinkUrl();
+    } catch (err) {}
+  }
+  const m = String(formula || "").match(/HYPERLINK\(\s*"([^"]+)"/i);
+  if (m) return m[1];
+  const s = String(valor || "").trim();
+  return /^https?:\/\//i.test(s) ? s : "";
 }
 
 function json(obj) {
