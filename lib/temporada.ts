@@ -43,7 +43,7 @@ function parseGviz(text: string): SeasonItem[] {
   const cols: string[] = json.table.cols.map((c: { label?: string }) => (c.label ?? "").trim());
   const idx = (name: string) => cols.findIndex((c) => c === name);
   const iNum = idx("Número"), iNome = idx("Anime"), iIni = idx("Dia de inicio"), iDia = idx("Dia da semana");
-  const iEp = idx("Último episódio visto"), iSem = idx("Semanal");
+  const iEp = idx("Último episódio visto"), iSem = idx("Semanal"), iUrl = idx("Url Imagem");
   const cell = (row: GvizCell[], i: number) => (i >= 0 ? row[i] : null);
   const out: SeasonItem[] = [];
   for (const r of json.table.rows as { c: GvizCell[] }[]) {
@@ -55,12 +55,13 @@ function parseGviz(text: string): SeasonItem[] {
     const inicio = d ? `${d[1]}-${String(+d[2] + 1).padStart(2, "0")}-${d[3].padStart(2, "0")}` : null;
     const epRaw = cell(r.c, iEp)?.v;
     const ep = epRaw === null || epRaw === undefined || epRaw === "" ? null : parseInt(String(epRaw), 10);
+    const url = String(cell(r.c, iUrl)?.v ?? "").trim();
     out.push({
       numero, nome, inicio,
       diaSemana: String(cell(r.c, iDia)?.v ?? "").trim(),
       ultimoEp: Number.isFinite(ep) ? ep : null,
       semanal: normSemanal(cell(r.c, iSem)?.v),
-      img: "", total: null, lancados: null,
+      img: url.startsWith("http") ? url : "", total: null, lancados: null,
     });
   }
   return out;
@@ -142,14 +143,16 @@ export async function loadTemporada(): Promise<SeasonItem[]> {
     if (!res.ok) return [];
     const itens = parseGviz(await res.text());
     await Promise.all([
-      // capas coladas nas células só saem pelo script do Google
+      // capa vem da coluna "Url Imagem"; quem não tiver URL cai na imagem colada na coluna "Imagem",
+      // que só sai pelo script do Google
       (async () => {
+        if (itens.every((it) => it.img)) return;
         try {
           const r = await fetch(SCRIPT_URL, { next: { revalidate: 3600 } });
           const j = await r.json();
           const imgs = new Map<number, string>((j.itens ?? []).map((x: { numero: number; imagem: string }) => [Number(x.numero), x.imagem]));
           // o Google devolve a capa em 2048 px; 360 px deixa a miniatura nítida
-          for (const it of itens) it.img = (imgs.get(it.numero) ?? "").replace(/=s\d+(?=[?&]|$)/, "=s360");
+          for (const it of itens) if (!it.img) it.img = (imgs.get(it.numero) ?? "").replace(/=s\d+(?=[?&]|$)/, "=s360");
         } catch { /* sem capas: o site mostra a inicial */ }
       })(),
       completarComAniList(itens).catch(() => { /* sem AniList: total fica "?" */ }),
