@@ -114,9 +114,10 @@ function atualizarEstreias() {
   const cNome = coluna(values[header], COL_NOME);
   if (cIni < 0 || cSem < 0) return;
 
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-  const semanaAtual = isoDia(segundaDe(hoje));
+  // tudo como texto AAAA-MM-DD no fuso da planilha: a data é a que está escrita na célula,
+  // sem depender do fuso do script
+  const hoje = isoDia(new Date());
+  const semanaAtual = segundaDe(hoje);
   const props = PropertiesService.getScriptProperties();
   const ultima = props.getProperty("ULTIMA_VIRADA");
   // primeira execução: só registra a semana atual, para não desmarcar os ✓ da semana em curso
@@ -127,7 +128,9 @@ function atualizarEstreias() {
     const status = String(values[r][cSem]).trim().toUpperCase();
     const inicio = values[r][cIni];
 
-    if (status === "-" && inicio instanceof Date && hoje >= segundaDe(inicio)) {
+    // "-" só vira "X" a partir da segunda-feira da semana da estreia
+    // (estreia 05/10 ou 06/10/2026 → muda em 05/10, que é segunda)
+    if (status === "-" && inicio instanceof Date && hoje >= segundaDe(isoDia(inicio))) {
       sheet.getRange(r + 1, cSem + 1).setValue("X");
     } else if (status === "V" && viraSemana) {
       const visto = Number(values[r][cEp]) || 0;
@@ -138,15 +141,17 @@ function atualizarEstreias() {
   if (viraSemana) props.setProperty("ULTIMA_VIRADA", semanaAtual);
 }
 
-function segundaDe(data) {
-  const d = new Date(data);
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-  return d;
+/** Segunda-feira da semana de uma data "AAAA-MM-DD" (a semana começa na segunda), também "AAAA-MM-DD". */
+function segundaDe(iso) {
+  const p = iso.split("-").map(Number);
+  const d = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return Utilities.formatDate(d, "UTC", "yyyy-MM-dd");
 }
 
+/** Data no fuso da planilha, "AAAA-MM-DD" (é o dia que aparece na célula). */
 function isoDia(d) {
-  return Utilities.formatDate(d, Session.getScriptTimeZone(), "yyyy-MM-dd");
+  return Utilities.formatDate(d, SpreadsheetApp.getActive().getSpreadsheetTimeZone(), "yyyy-MM-dd");
 }
 
 /** Total de episódios pelo AniList; só aceita o resultado cuja estreia fica a até 30 dias da planilha. */

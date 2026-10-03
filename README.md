@@ -125,8 +125,11 @@ Tudo responde aos filtros.
   A gravação vai para a planilha via `POST /api/temporada` → Apps Script.
 - Na primeira gravação pede uma senha, que fica salva no `localStorage` do navegador
   (`anime-view-senha`). Senha errada → pede de novo.
-- Exibição: um anime marcado `-` cuja semana de estreia já chegou aparece como `X`
-  (`semanalEfetivo`), mesmo antes de o gatilho do script atualizar a planilha.
+- Regra da estreia: um anime marcado `-` (não estreou) vira `X` (não visto) **a partir da
+  segunda-feira da semana da estreia** — a semana começa na segunda. Ex.: estreia em 05/10/2026
+  (segunda) ou 06/10/2026 (terça) → muda em 05/10; estreia em 12/10 → só em 12/10. O site já mostra
+  assim (`semanalEfetivo`) e o gatilho diário do script grava na planilha. As datas são comparadas
+  como texto AAAA-MM-DD (no script, no fuso da planilha), então o fuso não adianta a mudança.
 - Total e lançados vêm do AniList: busca pelo nome e aceita só o resultado com estreia a até
   30 dias do "Dia de inicio"; se não achar, tenta variantes ("II" → "2" / "2nd Season", parte antes
   dos dois-pontos).
