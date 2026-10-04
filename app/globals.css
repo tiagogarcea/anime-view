@@ -403,6 +403,21 @@ select, .dir {
 @media (max-width: 520px) { .fr-tab .fr-nome { min-width: 170px; } }
 .fr-mais { align-self: flex-start; padding: 6px 12px; border: 1px solid var(--line-2); background: none; color: var(--cyan); font-size: 12px; }
 
+/* Conteúdo escondido até aplicar os filtros do endereço (ver app/layout.tsx). Se o JavaScript falhar,
+   aparece sozinho depois de 2,5 s. */
+html.url-pendente .conteudo { visibility: hidden; animation: aparecer 0s 2.5s forwards; }
+@keyframes aparecer { to { visibility: visible; } }
+
+/* Páginas do Stats */
+.subtabs { display: flex; gap: 6px; margin: 4px 0 18px; border-bottom: 1px solid var(--line); }
+.subtab { padding: 10px 16px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); font-size: 12px; letter-spacing: 2px; margin-bottom: -1px; }
+.subtab:hover { color: var(--text); }
+.subtab.on { color: var(--cyan); border-bottom-color: var(--cyan); }
+@media (max-width: 520px) { .subtab { flex: 1; padding: 10px 4px; letter-spacing: 1px; font-size: 11px; } }
+
+/* Aviso quando um pedaço da página dá erro (components/Seguro.tsx) */
+.seguro { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 16px 20px; border: 1px dashed var(--gold); color: var(--gold); font-size: 13px; }
+
 /* Tooltip leve para qualquer elemento com data-tip */
 [data-tip]:hover::after {
   content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);

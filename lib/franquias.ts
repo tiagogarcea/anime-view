@@ -1,14 +1,15 @@
 import type { Anime } from "./types";
 
 /**
- * Franquias: animes da planilha ligados pelo AniList. Entram continuações (SEQUEL/PREQUEL) e histórias
- * paralelas (SIDE_STORY: OVAs, especiais e filmes da mesma história). Spin-offs (ex.: Vigilante de Boku
- * no Hero) e crossovers (ex.: Isekai Quartet) ficam de fora. PARENT não entra de propósito: é o caminho
+ * Franquias: animes da planilha ligados pelo AniList. Entram continuações (SEQUEL/PREQUEL), histórias
+ * paralelas (SIDE_STORY: OVAs, especiais e filmes da mesma história) e versões alternativas da mesma
+ * história (ALTERNATIVE: remakes e recontagens — Kenpuu Denki Berserk, FMA 2003 × Brotherhood,
+ * Trigun × Stampede). Spin-offs (ex.: Vigilante de Boku no Hero) e crossovers (Isekai Quartet) ficam de fora. PARENT não entra de propósito: é o caminho
  * de volta dos spin-offs para a série principal (Vigilante → Boku no Hero aparece como PARENT); as
  * histórias paralelas já se ligam pelo SIDE_STORY que sai da série principal.
  * A coluna opcional "Franquia" da planilha manda: o que estiver escrito nela vale mais que o AniList.
  */
-export const LIGACOES = ["SEQUEL", "PREQUEL", "SIDE_STORY"];
+export const LIGACOES = ["SEQUEL", "PREQUEL", "SIDE_STORY", "ALTERNATIVE"];
 
 /** Por ID do MyAnimeList: o ID do anime no AniList e os IDs (AniList) dos títulos ligados a ele. */
 export type Relacoes = Record<number, { id: number; ligados: number[] }>;
@@ -29,6 +30,7 @@ export async function buscarRelacoes(malIds: number[]): Promise<Relacoes> {
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({ query: QUERY, variables: { ids: ids.slice(i, i + 50) } }),
       cache: "no-store",
+      signal: AbortSignal.timeout(10000),
     });
     if (!r.ok) throw new Error(`AniList respondeu ${r.status}`);
     const j = await r.json();

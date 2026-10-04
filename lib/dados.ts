@@ -25,6 +25,6 @@ export const lerTemporada = unstable_cache(lido(loadTemporada), ["temporada-v1"]
  */
 export const lerRelacoes = unstable_cache(
   lido(async () => buscarRelacoes((await loadAnimes()).map((a) => a.malId))),
-  ["franquias-v1"],
+  ["franquias-v2"],
   { revalidate: 6 * 3600 },
 );

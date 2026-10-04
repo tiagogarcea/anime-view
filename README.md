@@ -29,7 +29,7 @@ npm test           # testes das regras (tests/*.test.ts)
   Temporada Atual (gviz), escolha do resultado do AniList, nome do site pelo link.
 - `tests/planilha.test.ts` — leitura das abas Animes Completos e Historico (formatos de data,
   colunas, ligação pelo nome), raridade.
-- `tests/filtros.test.ts` — filtros, ordenação, `?aba=` e filtros no endereço.
+- `tests/filtros.test.ts` — filtros, ordenação, endereço de cada aba e filtros no endereço.
 - `tests/franquias.test.ts` — agrupamento (temporada faltando, OVA, spin-off separado, coluna
   Franquia juntando com o grupo automático), resumo e filtro/endereço.
 - `tests/retro.test.ts` — retrospectiva/comparação de anos, filtro de status da Temporada no
@@ -50,8 +50,22 @@ A pasta `Anime-View/` é o próprio repositório: para publicar, `npm test`, `np
 push (ou rode `Git_Push.bat`, que faz `git add .`, commit com data/hora e push). A antiga
 `Anime-View-Git/` não é mais usada.
 
-A planilha é relida no máximo a cada 60 s (`lib/dados.ts`), guardando sempre a última versão que
-funcionou. A página em si é montada a cada visita, porque lê a aba e os filtros da URL.
+## Velocidade e robustez
+
+- **Páginas prontas.** Cada aba (`/`, `/stats`, `/stats/retrospectiva`, `/temporada`) é gerada no
+  build e servida pronta pela Vercel; a cada 60 s, na visita seguinte, é renovada em segundo plano
+  (`revalidate` em `app/(site)/layout.tsx`). Ninguém espera a planilha, o script ou o AniList.
+- **Última versão boa.** Os dados ficam em cache (`lib/dados.ts`) e, se uma leitura falhar, continua
+  valendo a anterior. Se a renovação da página inteira falhar, a Vercel mantém no ar a última que
+  funcionou. A hora no rodapé diz de quando são os dados.
+- **Prazo para fontes lentas** (`components/Pagina.tsx`): Temporada (~7 s com cache vazio) e franquias
+  (~12 s) não seguram a renovação: se passarem do prazo, a página sai sem elas e a busca termina em
+  segundo plano (`after`). As franquias, se faltarem, o navegador busca em `GET /api/franquias`.
+- **Tempo limite** em toda busca externa (`AbortSignal.timeout`: planilha 15 s, script 10 a 20 s,
+  AniList 10 s): nada fica pendurado.
+- **Erro num pedaço não derruba a página**: cada painel e aba fica dentro de `components/Seguro.tsx`,
+  que mostra "Não consegui mostrar ... TENTAR DE NOVO" só no lugar dele. Erro geral: `app/error.tsx`
+  (tela com "tentar de novo") e `app/global-error.tsx`.
 
 ### Variáveis de ambiente (todas opcionais)
 
@@ -65,7 +79,7 @@ Sem elas, o código usa as URLs fixas da planilha `1a6Ylv7yKu8yb1DJkYpZynTSedbOz
 
 ## Fontes de dados
 
-Tudo vem de uma única planilha do Google, lida no servidor (`app/page.tsx` → `lib/dados.ts`).
+Tudo vem de uma única planilha do Google, lida no servidor (`components/Pagina.tsx` → `lib/dados.ts`).
 
 **Se o Google falhar** (fora do ar, resposta vazia), o site não mostra erro: continua com a última
 versão que funcionou e tenta de novo na visita seguinte. Cada aba é guardada com a hora em que foi
@@ -119,11 +133,17 @@ Imagens coladas e a URL por trás do texto "Link" não saem no gviz: vêm do `do
 
 ## Funcionalidades
 
-Três abas no topo: **ANIME LIST**, **STATS** e **TEMPORADA**. A aba fica no endereço
-(`/?aba=stats`, `/?aba=temporada`; sem `?aba` = Anime List). O servidor lê esse valor e já monta a
-página na aba certa, então o F5 continua na mesma aba sem passar pela Anime List; o link abre direto
-nela e o voltar/avançar do navegador troca de aba. Links antigos com `#stats` / `#temporada` são
-convertidos sozinhos. Abas válidas: `lib/tabs.ts`.
+Três abas no topo: **ANIME LIST** (`/`), **STATS** (`/stats` e `/stats/retrospectiva`) e
+**TEMPORADA** (`/temporada`), definidas em `lib/tabs.ts`. Cada aba é uma página pronta, então o F5
+abre direto nela. Os dados e o App ficam no layout comum (`app/(site)/layout.tsx`; as páginas só
+marcam o endereço): trocar de aba é uma navegação do Next que não recarrega nada, e voltar/avançar do
+navegador funciona. Links antigos `/?aba=stats` e `/?aba=temporada` são redirecionados
+(`next.config.mjs`); `/#stats` e `/#temporada` são convertidos no navegador.
+
+Filtros (`?busca=`, `?raridade=`...) e o filtro de status da Temporada (`?status=`) também ficam no
+endereço, mas como a página pronta é igual para todos, eles são aplicados no navegador: um script no
+`app/layout.tsx` esconde o conteúdo até aplicar (classe `url-pendente`), para a lista não piscar sem
+filtro. Se o JavaScript falhar, o conteúdo aparece sozinho em 2,5 s.
 
 ### Anime List
 - "Puxada do dia": sorteio ponderado (peso = score, mínimo 1; favorito dobra; +0,1 por mês desde a
@@ -134,8 +154,8 @@ convertidos sozinhos. Abas válidas: `lib/tabs.ts`.
 - Busca por nome JP ou EN, filtros em cascata com contagem por opção (score, datas De/Até, season,
   ano, estúdio, gênero, tema, demografia, favorito, rewatched, raridade) na barra e na gaveta.
 - Ordenação por N°, Nome, Score, Episódios, Visto em, Ano, Studio; padrão "Visto em" decrescente.
-- Filtros, busca e ordenação ficam no endereço (`lib/urlFiltros.ts`), lidos pelo servidor: o F5 não
-  os perde e dá para salvar ou compartilhar uma busca. Só entra o que difere do padrão. Parâmetros:
+- Filtros, busca e ordenação ficam no endereço (`lib/urlFiltros.ts`): o F5 não os perde, trocar de
+  aba os mantém e dá para salvar ou compartilhar uma busca. Só entra o que difere do padrão. Parâmetros:
   `busca`, `score` e `eps` (faixa `min-max`, ex.: `8-10`, `8-`), `de` e `ate` (AAAA-MM-DD), `season`,
   `ano`, `estudio`, `genero`, `tema`, `demografia`, `fav`, `rewatch`, `raridade`, `franquia` (repetidos para vários
   valores), `ordem` e `crescente` (`1`/`0`). Ex.: `/?raridade=SSR&raridade=SR&ano=2024&ordem=score&crescente=0`.
@@ -145,12 +165,15 @@ convertidos sozinhos. Abas válidas: `lib/tabs.ts`.
 Raridade das cartas: score 10 = SSR, 9 = SR, 8 = R, até 7 = N (`tierOf` em `lib/types.ts`).
 
 ### Stats
-Heatmap de atividade por ano (com seletor e nomes no tooltip; em tela larga a grade não rola, para o
+Duas páginas, com abas internas **VISÃO GERAL** e **RETROSPECTIVA E FRANQUIAS**. Tudo responde aos filtros.
+
+**Visão geral** (`/stats`): heatmap de atividade por ano (com seletor e nomes no tooltip; em tela larga a grade não rola, para o
 tooltip da segunda-feira não ser cortado, e nas primeiras/últimas semanas ele abre para dentro), distribuição por score, ano de
 lançamento, assistidos ao longo do tempo (por mês; a partir de jan/2023 usa a aba Historico e conta
-rewatches), top 15 estúdios, top 12 temas, gêneros, demografia (barra empilhada) e mais reassistidos
-(top 24).
-Tudo responde aos filtros.
+rewatches), top 15 estúdios, top 12 temas, gêneros e demografia (barra empilhada).
+
+**Retrospectiva e franquias** (`/stats/retrospectiva`): retrospectiva do ano, painel de franquias (ver
+"Franquias") e mais reassistidos (top 24).
 
 **Retrospectiva** (`components/Retro.tsx`, `retrospectiva` em `lib/stats.ts`): resumo de um ano pela
 aba Historico — só de 2023 em diante, porque antes não há registro de cada vez assistida. Mostra vezes
@@ -191,18 +214,19 @@ período (jan até o mês atual) nos dois — dá para desmarcar.
 
 ### Franquias
 
-`lib/franquias.ts` junta os títulos da planilha que o AniList liga como **continuação** (SEQUEL/PREQUEL)
-ou **história paralela** (SIDE_STORY: OVAs, especiais e filmes da mesma história). Spin-offs (ex.:
-Vigilante, de Boku no Hero; Gun Gale Online, de SAO) e crossovers (Isekai Quartet) ficam separados.
+`lib/franquias.ts` junta os títulos da planilha que o AniList liga como **continuação** (SEQUEL/PREQUEL),
+**história paralela** (SIDE_STORY: OVAs, especiais e filmes da mesma história) ou **versão
+alternativa** (ALTERNATIVE: remakes e recontagens, como Kenpuu Denki Berserk, FMA 2003 e Brotherhood,
+Trigun e Stampede, Steins;Gate 0). Spin-offs (ex.: Vigilante, de Boku no Hero; Gun Gale Online, de SAO)
+e crossovers (Isekai Quartet) ficam separados.
 O tipo PARENT não é usado de propósito: é por ele que os spin-offs apontam de volta para a série.
 
 - Títulos se ligam também através de um que não está na planilha (viu a 1ª e a 3ª temporada → ligadas
   pela 2ª). Só grupos com 2+ títulos viram franquia.
 - Nome: o título mais curto do grupo ("Berserk", "Jujutsu Kaisen").
 - **Coluna `Franquia`** (opcional, na aba Animes Completos): o que estiver escrito manda. Se for igual
-  (sem ligar para maiúsculas) ao nome de uma franquia automática, o título entra nela. Ex.: o AniList
-  trata *Kenpuu Denki Berserk* (1997) como "versão alternativa", não continuação; escrever `Berserk`
-  nela junta com os filmes e a série de 2016.
+  (sem ligar para maiúsculas) ao nome de uma franquia automática, o título entra nela. Serve para
+  corrigir o que o AniList ligar errado ou deixar de ligar.
 - Onde aparece: painel **FRANQUIAS** no Stats (tempo, episódios, nota média, evolução da nota do 1º
   ao último título, rewatches; ordenável; clique no nome filtra a Anime List), filtro **Franquia**
   na gaveta de filtros (`?franquia=` no endereço) e linha FRANQUIA no modal do anime.
@@ -225,7 +249,10 @@ numa linha só e os painéis viram uma coluna.
 ```
 
 Respostas: `200 { ok: true, ... }`, `400` dados inválidos, `401` senha errada, `502` script fora.
-Em caso de sucesso, invalida o cache da tag `temporada` e da página `/`.
+Em caso de sucesso, invalida o cache da tag `temporada` e todas as páginas.
+
+`GET /api/franquias` (`app/api/franquias/route.ts`): ligações do AniList (cache de 6 h), usado pelo
+navegador quando a página pronta saiu sem as franquias.
 
 ## Apps Script (`apps-script/Temporada.gs`)
 
@@ -255,17 +282,21 @@ Instalação e atualização (mantendo a mesma URL) estão descritas no topo do 
 
 ```
 app/
-  layout.tsx            fontes, metadados e cor do tema (celular)
+  layout.tsx            fontes, metadados, cor do tema; script que esconde até aplicar filtros da URL
+  (site)/layout.tsx     layout das abas: monta <Pagina> (dados + App), renovado a cada 60 s
+  (site)/page.tsx       "/" (e stats/page.tsx, stats/retrospectiva/page.tsx, temporada/page.tsx):
+                        só os endereços, vazios; a aba sai do endereço
+  error.tsx, global-error.tsx   telas de erro com "tentar de novo"
   manifest.ts           manifesto para instalar no celular
-  page.tsx              lê as 3 abas (lib/dados.ts), a aba e os filtros da URL; monta <App>
   globals.css           todo o visual
   api/temporada/        rota POST que grava na aba Temporada Atual
+  api/franquias/        rota GET com as ligações do AniList (reserva do navegador)
   icon.svg, apple-icon.png
 lib/
   dados.ts              cache das 3 abas (60 s) e das franquias (6 h), com hora da leitura e a última versão boa
   franquias.ts          ligações do AniList → franquias; resumo de cada uma
   types.ts              tipo Anime, raridades (tierOf)
-  tabs.ts               abas do site e validação do ?aba= (servidor e cliente)
+  tabs.ts               abas e endereços (/, /stats, /stats/retrospectiva, /temporada)
   urlFiltros.ts         filtros e ordenação ↔ parâmetros do endereço (servidor e cliente)
   sheet.ts              CSV "Animes Completos" → Anime[]
   history.ts            CSV "Historico" → Viewing[], ligação por nome
@@ -277,12 +308,14 @@ lib/
   format.ts             datas, números, hora de atualização, cor por nome
   hdCovers.ts           lista das capas ampliadas em public/covers/
 components/
-  App.tsx               estado (aba, filtros e ordenação, todos no endereço; modal)
+  Pagina.tsx            carrega a planilha (com prazo para fontes lentas) e monta o App
+  App.tsx               estado (aba pelo endereço, filtros e ordenação, franquias; modal)
+  Seguro.tsx            protege cada pedaço: erro mostra aviso só no lugar dele
   Header.tsx            marca e abas
   Hero.tsx              puxada do dia
   KpiStrip.tsx, FilterBar.tsx, FilterDrawer.tsx
   Collection.tsx, Card.tsx, Poster.tsx, DetailModal.tsx
-  Stats.tsx             gráficos
+  Stats.tsx             as duas páginas do Stats (visão geral; retrospectiva e franquias)
   Retro.tsx             retrospectiva do ano e comparação entre anos
   Franquias.tsx         painel de franquias do Stats
   Season.tsx            aba Temporada (filtro de status, episódios, onde assistir, senha)

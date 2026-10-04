@@ -21,7 +21,7 @@ export default function Header({ tab, onTab }: Props) {
         <button type="button" className={tab === "deck" ? "tab on" : "tab"} onClick={() => onTab("deck")}>
           [ ANIME LIST ]
         </button>
-        <button type="button" className={tab === "stats" ? "tab on" : "tab"} onClick={() => onTab("stats")}>
+        <button type="button" className={tab === "stats" || tab === "retro" ? "tab on" : "tab"} onClick={() => onTab("stats")}>
           [ STATS ]
         </button>
         <button type="button" className={tab === "temporada" ? "tab on" : "tab"} onClick={() => onTab("temporada")}>

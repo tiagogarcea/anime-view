@@ -38,15 +38,21 @@ function guardarSenha(s: string) {
   try { if (s) localStorage.setItem(SENHA_KEY, s); else localStorage.removeItem(SENHA_KEY); } catch { /* sem storage */ }
 }
 
-export default function Season({ items, atualizado, filtroInicial }: { items: SeasonItem[]; atualizado: string; filtroInicial: Semanal[] }) {
+export default function Season({ items, atualizado }: { items: SeasonItem[]; atualizado: string }) {
   // status escolhidos nos contadores do topo; vazio = mostra todos. Fica no endereço (?status=).
-  // ao voltar para a aba, relê do endereço (o valor do servidor é só o da hora em que a página abriu)
-  const [filtro, setFiltro] = useState<Semanal[]>(() =>
-    typeof window === "undefined" ? filtroInicial : lerFiltroStatus(new URLSearchParams(window.location.search).getAll("status")));
+  // status escolhidos nos contadores do topo; vazio = mostra todos. Fica no endereço (?status=), lido
+  // aqui no navegador porque a página vem pronta (igual para todos).
+  const [filtro, setFiltro] = useState<Semanal[]>([]);
+  const [filtroLido, setFiltroLido] = useState(false);
   useEffect(() => {
+    setFiltro(lerFiltroStatus(new URLSearchParams(window.location.search).getAll("status")));
+    setFiltroLido(true);
+  }, []);
+  useEffect(() => {
+    if (!filtroLido) return;
     const busca = escreverFiltroStatus(new URLSearchParams(window.location.search), filtro);
     if (busca !== window.location.search) window.history.replaceState(null, "", window.location.pathname + busca);
-  }, [filtro]);
+  }, [filtro, filtroLido]);
   const alternar = (s: Semanal) => setFiltro((f) => (f.includes(s) ? f.filter((x) => x !== s) : [...f, s]));
   const inicial = () => new Map(items.map((i) => [i.numero, { ep: i.ultimoEp, sem: i.semanal }]));
   const [vals, setVals] = useState<Map<number, Valores>>(inicial);

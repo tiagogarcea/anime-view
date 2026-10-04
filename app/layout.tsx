@@ -14,9 +14,19 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#07070c" };
 
+/**
+ * As páginas vêm prontas (iguais para todos), e os filtros do endereço (?busca=, ?status=…) só são
+ * aplicados no navegador. Para não piscar a lista sem filtro, este script marca a página antes de ela
+ * aparecer e o App tira a marca depois de aplicar (CSS .url-pendente em globals.css).
+ */
+const ESCONDE_ATE_FILTRAR = `if (location.search.length > 1) document.documentElement.classList.add("url-pendente")`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${display.variable} ${mono.variable}`}>
+    <html lang="pt-BR" className={`${display.variable} ${mono.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: ESCONDE_ATE_FILTRAR }} />
+      </head>
       <body>{children}</body>
     </html>
   );

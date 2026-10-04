@@ -8,12 +8,20 @@ import { fmtDate, fmtMonth } from "@/lib/format";
 import Poster from "./Poster";
 import Retrospectiva from "./Retro";
 import Franquias from "./Franquias";
+import Seguro from "./Seguro";
 
 const TIER_OF_SCORE = (s: number): Tier => (s >= 10 ? "SSR" : s >= 9 ? "SR" : s >= 8 ? "R" : "N");
 const CAT = ["var(--red)", "var(--cyan)", "var(--gold)", "var(--violet)", "var(--gray)"];
 
-export default function Stats({ rows, history, onOpen, onFranquia }: {
-  rows: Anime[]; history: Viewing[]; onOpen: (a: Anime) => void; onFranquia: (nome: string) => void;
+/**
+ * Stats em duas páginas: "geral" (/stats: atividade, scores, ano, linha do tempo, estúdios/temas/gêneros,
+ * demografia) e "retro" (/stats/retrospectiva: retrospectiva do ano, franquias e mais reassistidos).
+ * Cada painel fica dentro de um <Seguro>: se um der erro, os outros continuam.
+ */
+export default function Stats({ secao, rows, history, onOpen, onFranquia, franquiasProntas }: {
+  secao: "geral" | "retro"; rows: Anime[]; history: Viewing[]; onOpen: (a: Anime) => void; onFranquia: (nome: string) => void;
+  /** false = ainda buscando as ligações do AniList (/api/franquias) */
+  franquiasProntas: boolean;
 }) {
   if (!rows.length) {
     return (
@@ -23,75 +31,105 @@ export default function Stats({ rows, history, onOpen, onFranquia }: {
       </section>
     );
   }
+  return <div className="stats">{secao === "retro" ? <PaginaRetro rows={rows} history={history} onOpen={onOpen} onFranquia={onFranquia} franquiasProntas={franquiasProntas} /> : <PaginaGeral rows={rows} history={history} />}</div>;
+}
 
+function PaginaGeral({ rows, history }: { rows: Anime[]; history: Viewing[] }) {
   const demo = countBy(rows, (a) => a.demografia).sort((a, b) => b.n - a.n);
   const demoTotal = demo.reduce((s, d) => s + d.n, 0);
-  const rw = topRewatch(rows, 24);
-
   return (
-    <div className="stats">
-      <Heatmap rows={rows} />
-
-      {history.length > 0 && <Retrospectiva rows={rows} history={history} onOpen={onOpen} />}
+    <>
+      <Seguro nome="a atividade"><Heatmap rows={rows} /></Seguro>
 
       <div className="two">
-        <Panel title="DISTRIBUIÇÃO POR SCORE">
-          <Columns data={scoreDistribution(rows)} colorOf={(b) => `var(--t-${TIER_OF_SCORE(Number(b.label))})`} tip={(b) => `score ${b.label}: ${b.n} animes`} />
-          <div className="legend">
-            <span><i className="bg-SSR" /> SSR</span><span><i className="bg-SR" /> SR</span><span><i className="bg-R" /> R</span><span><i className="bg-N" /> N</span>
-          </div>
-        </Panel>
-        <Panel title="ANO DE LANÇAMENTO">
-          <YearColumns data={byYear(rows)} />
-        </Panel>
+        <Seguro nome="a distribuição por score">
+          <Panel title="DISTRIBUIÇÃO POR SCORE">
+            <Columns data={scoreDistribution(rows)} colorOf={(b) => `var(--t-${TIER_OF_SCORE(Number(b.label))})`} tip={(b) => `score ${b.label}: ${b.n} animes`} />
+            <div className="legend">
+              <span><i className="bg-SSR" /> SSR</span><span><i className="bg-SR" /> SR</span><span><i className="bg-R" /> R</span><span><i className="bg-N" /> N</span>
+            </div>
+          </Panel>
+        </Seguro>
+        <Seguro nome="o ano de lançamento">
+          <Panel title="ANO DE LANÇAMENTO">
+            <YearColumns data={byYear(rows)} />
+          </Panel>
+        </Seguro>
       </div>
 
-      <Panel title="ASSISTIDOS AO LONGO DO TEMPO" note={history.length ? "// por mês · rewatches contam a partir de 2023" : "// por mês"}>
-        <AreaChart data={byMonthWithHistory(rows, history)} splitAt={history.length ? HISTORY_START : undefined} />
-      </Panel>
+      <Seguro nome="os assistidos ao longo do tempo">
+        <Panel title="ASSISTIDOS AO LONGO DO TEMPO" note={history.length ? "// por mês · rewatches contam a partir de 2023" : "// por mês"}>
+          <AreaChart data={byMonthWithHistory(rows, history)} splitAt={history.length ? HISTORY_START : undefined} />
+        </Panel>
+      </Seguro>
 
       <div className="three">
-        <Panel title="TOP 15 ESTÚDIOS"><Bars data={top(rows, (a) => a.studio, 15)} color="var(--red)" /></Panel>
-        <Panel title="TOP 12 TEMAS"><Bars data={top(rows, (a) => a.tema, 12)} color="var(--cyan)" /></Panel>
-        <Panel title="GÊNEROS"><Bars data={top(rows, (a) => a.genero, 20)} color="var(--gold)" /></Panel>
+        <Seguro nome="os estúdios"><Panel title="TOP 15 ESTÚDIOS"><Bars data={top(rows, (a) => a.studio, 15)} color="var(--red)" /></Panel></Seguro>
+        <Seguro nome="os temas"><Panel title="TOP 12 TEMAS"><Bars data={top(rows, (a) => a.tema, 12)} color="var(--cyan)" /></Panel></Seguro>
+        <Seguro nome="os gêneros"><Panel title="GÊNEROS"><Bars data={top(rows, (a) => a.genero, 20)} color="var(--gold)" /></Panel></Seguro>
       </div>
 
-      <Panel title="DEMOGRAFIA">
-        <div className="stack" role="img" aria-label={demo.map((d) => `${d.label} ${d.n}`).join(", ")}>
-          {demo.map((d, i) => (
-            <span key={d.label} data-tip={`${d.label}: ${d.n} (${Math.round((d.n / demoTotal) * 100)}%)`}
-              style={{ width: `${(d.n / demoTotal) * 100}%`, background: CAT[Math.min(i, CAT.length - 1)] }} />
-          ))}
-        </div>
-        <div className="legend big">
-          {demo.map((d, i) => (
-            <span key={d.label}>
-              <i style={{ background: CAT[Math.min(i, CAT.length - 1)] }} /> {d.label}{" "}
-              <b>{d.n}</b> <span className="muted">{((d.n / demoTotal) * 100).toFixed(1).replace(".", ",")}%</span>
-            </span>
-          ))}
-        </div>
-      </Panel>
-
-      <Franquias rows={rows} onFranquia={onFranquia} />
-
-      {rw.length > 0 && (
-        <Panel title="MAIS REASSISTIDOS" note={`// top ${rw.length}`}>
-          <div className="rw-grid">
-            {rw.map((a, i) => (
-              <button type="button" key={a.id} className="rw-card" onClick={() => onOpen(a)}>
-                <span className="rw-art">
-                  <Poster anime={a} />
-                  <span className="rw-rank">#{i + 1}</span>
-                  <span className="rw-n">↻ {a.rewatch}×</span>
-                </span>
-                <span className="rw-name">{a.nome}</span>
-              </button>
+      <Seguro nome="a demografia">
+        <Panel title="DEMOGRAFIA">
+          <div className="stack" role="img" aria-label={demo.map((d) => `${d.label} ${d.n}`).join(", ")}>
+            {demo.map((d, i) => (
+              <span key={d.label} data-tip={`${d.label}: ${d.n} (${Math.round((d.n / demoTotal) * 100)}%)`}
+                style={{ width: `${(d.n / demoTotal) * 100}%`, background: CAT[Math.min(i, CAT.length - 1)] }} />
+            ))}
+          </div>
+          <div className="legend big">
+            {demo.map((d, i) => (
+              <span key={d.label}>
+                <i style={{ background: CAT[Math.min(i, CAT.length - 1)] }} /> {d.label}{" "}
+                <b>{d.n}</b> <span className="muted">{((d.n / demoTotal) * 100).toFixed(1).replace(".", ",")}%</span>
+              </span>
             ))}
           </div>
         </Panel>
+      </Seguro>
+    </>
+  );
+}
+
+function PaginaRetro({ rows, history, onOpen, onFranquia, franquiasProntas }: {
+  rows: Anime[]; history: Viewing[]; onOpen: (a: Anime) => void; onFranquia: (nome: string) => void; franquiasProntas: boolean;
+}) {
+  const rw = topRewatch(rows, 24);
+  return (
+    <>
+      {history.length > 0 ? (
+        <Seguro nome="a retrospectiva"><Retrospectiva rows={rows} history={history} onOpen={onOpen} /></Seguro>
+      ) : (
+        <p className="muted">A retrospectiva usa a aba Historico, que não carregou agora. Tente recarregar em instantes.</p>
       )}
-    </div>
+
+      {franquiasProntas ? (
+        <Seguro nome="as franquias"><Franquias rows={rows} onFranquia={onFranquia} /></Seguro>
+      ) : (
+        <Panel title="FRANQUIAS" note="// carregando as ligações do AniList…">
+          <p className="muted small">Leva alguns segundos na primeira vez; o painel aparece sozinho.</p>
+        </Panel>
+      )}
+
+      {rw.length > 0 && (
+        <Seguro nome="os mais reassistidos">
+          <Panel title="MAIS REASSISTIDOS" note={`// top ${rw.length}`}>
+            <div className="rw-grid">
+              {rw.map((a, i) => (
+                <button type="button" key={a.id} className="rw-card" onClick={() => onOpen(a)}>
+                  <span className="rw-art">
+                    <Poster anime={a} />
+                    <span className="rw-rank">#{i + 1}</span>
+                    <span className="rw-n">↻ {a.rewatch}×</span>
+                  </span>
+                  <span className="rw-name">{a.nome}</span>
+                </button>
+              ))}
+            </div>
+          </Panel>
+        </Seguro>
+      )}
+    </>
   );
 }
 

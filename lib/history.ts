@@ -56,7 +56,7 @@ export function parseHistory(csv: string): Viewing[] {
 
 /** Lê a aba agora; falha → erro (lib/dados.ts guarda a última versão boa). */
 export async function loadHistory(): Promise<Viewing[]> {
-  const res = await fetch(HISTORY_URL, { cache: "no-store" });
+  const res = await fetch(HISTORY_URL, { cache: "no-store", signal: AbortSignal.timeout(15000) });
   if (!res.ok) throw new Error(`Historico respondeu ${res.status}`);
   const h = parseHistory(await res.text());
   if (!h.length) throw new Error("Historico veio vazio");

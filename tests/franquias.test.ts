@@ -33,8 +33,19 @@ const rel: Relacoes = {
 const agr = agruparFranquias(animes, rel);
 const de = (nome: string) => agr.find((a) => a.nome === nome)!.franquia;
 
-test("LIGACOES: continuações e histórias paralelas; PARENT/SPIN_OFF/crossover ficam de fora", () => {
-  assert.deepEqual(LIGACOES, ["SEQUEL", "PREQUEL", "SIDE_STORY"]);
+test("LIGACOES: continuações, histórias paralelas e versões alternativas; PARENT/SPIN_OFF/crossover ficam de fora", () => {
+  assert.deepEqual(LIGACOES, ["SEQUEL", "PREQUEL", "SIDE_STORY", "ALTERNATIVE"]);
+});
+
+test("versão alternativa (remake) entra na franquia sem precisar da coluna", () => {
+  const t = parseSheet([
+    "N°,Nome,Score,Episodes,Temporada,URL_Pagina",
+    `1,Trigun,8,26,Spring 1998,${mal(6)}`,
+    `2,Trigun Stampede,8,12,Winter 2023,${mal(7)}`,
+  ].join("\n"));
+  // AniList: Trigun Stampede → Trigun é ALTERNATIVE (buscarRelacoes já filtra pelos tipos de LIGACOES)
+  const r = agruparFranquias(t, { 6: { id: 106, ligados: [] }, 7: { id: 107, ligados: [106] } });
+  assert.deepEqual(r.map((a) => a.franquia), ["Trigun", "Trigun"]);
 });
 
 test("agrupa pela temporada que falta na planilha e pela OVA; nome = o mais curto", () => {

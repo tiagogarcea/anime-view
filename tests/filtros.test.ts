@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { applyFilters, DEFAULT_SORT, EMPTY_FILTERS, sortRows } from "@/lib/filters";
 import { escreverBusca, lerBusca } from "@/lib/urlFiltros";
-import { tabValida } from "@/lib/tabs";
+import { CAMINHO, tabDoCaminho, tabValida } from "@/lib/tabs";
 import { parseSheet } from "@/lib/sheet";
 
 const animes = parseSheet([
@@ -11,6 +11,16 @@ const animes = parseSheet([
   "2,Bocchi,9,12,Fall 2022,CloverWorks,05/01/2023",
   "3,Sem Data,7,12,Spring 2020,Madhouse,",
 ].join("\n"));
+
+test("abas: cada uma tem seu endereço e o endereço volta para a aba", () => {
+  assert.equal(tabDoCaminho("/"), "deck");
+  assert.equal(tabDoCaminho("/stats"), "stats");
+  assert.equal(tabDoCaminho("/stats/"), "stats");
+  assert.equal(tabDoCaminho("/stats/retrospectiva"), "retro");
+  assert.equal(tabDoCaminho("/temporada"), "temporada");
+  assert.equal(tabDoCaminho("/qualquer"), "deck");
+  for (const [t, c] of Object.entries(CAMINHO)) assert.equal(tabDoCaminho(c), t);
+});
 
 test("tabValida: só aceita as abas que existem", () => {
   assert.equal(tabValida("stats"), "stats");

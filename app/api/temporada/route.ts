@@ -40,12 +40,13 @@ export async function POST(req: Request) {
       body: JSON.stringify(payload),
       redirect: "follow",
       cache: "no-store",
+      signal: AbortSignal.timeout(20000),
     });
     const j = await r.json();
     if (!j.ok) return Response.json(j, { status: j.erro === "senha" ? 401 : 400 });
     // expira na hora: a próxima visita já lê a planilha atualizada
     revalidateTag("temporada", { expire: 0 });
-    revalidatePath("/");
+    revalidatePath("/", "layout"); // todas as páginas (/, /stats, /temporada…)
     return Response.json(j);
   } catch {
     return Response.json({ ok: false, erro: "script" }, { status: 502 });

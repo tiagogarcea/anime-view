@@ -128,7 +128,7 @@ function unifyCase(list: Anime[], keys: ("genero" | "tema" | "studio" | "demogra
 
 /** Lê a aba agora (o cache e o "último que funcionou" ficam em lib/dados.ts). Falha → erro. */
 export async function loadAnimes(): Promise<Anime[]> {
-  const res = await fetch(SHEET_URL, { cache: "no-store" });
+  const res = await fetch(SHEET_URL, { cache: "no-store", signal: AbortSignal.timeout(15000) });
   if (!res.ok) throw new Error(`Planilha respondeu ${res.status}`);
   const animes = parseSheet(await res.text());
   // o Google às vezes responde 200 com uma página de erro: sem nenhum anime, não serve

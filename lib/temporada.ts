@@ -116,6 +116,7 @@ async function buscarAniList(buscas: string[]): Promise<AlMedia[][]> {
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({ query, variables }),
     next: { revalidate: 3600 },
+    signal: AbortSignal.timeout(10000),
   });
   if (!r.ok) return buscas.map(() => []);
   const j = await r.json();
@@ -143,7 +144,7 @@ async function completarComAniList(itens: SeasonItem[]) {
 
 /** Lê a aba agora; se a planilha falhar, dá erro (lib/dados.ts guarda a última versão boa). */
 export async function loadTemporada(): Promise<SeasonItem[]> {
-  const res = await fetch(GVIZ, { cache: "no-store" });
+  const res = await fetch(GVIZ, { cache: "no-store", signal: AbortSignal.timeout(15000) });
   if (!res.ok) throw new Error(`Temporada respondeu ${res.status}`);
   const itens = parseGviz(await res.text());
   await Promise.all([
@@ -151,7 +152,7 @@ export async function loadTemporada(): Promise<SeasonItem[]> {
     // A capa vem da coluna "Url Imagem"; a colada na coluna "Imagem" é só reserva.
     (async () => {
       try {
-        const r = await fetch(SCRIPT_URL, { cache: "no-store" });
+        const r = await fetch(SCRIPT_URL, { cache: "no-store", signal: AbortSignal.timeout(10000) });
         const j = await r.json();
         type Extra = { numero: number; imagem?: string; streaming?: string; link?: string };
         const extras = new Map<number, Extra>((j.itens ?? []).map((x: Extra) => [Number(x.numero), x]));
