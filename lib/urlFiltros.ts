@@ -17,6 +17,7 @@ const MULTI_PARAM: Record<MultiKey, string> = {
   fav: "fav",
   rewatch: "rewatch",
   tier: "raridade",
+  franquia: "franquia",
 };
 
 export type Busca = { filters: Filters; sortKey: SortKey; sortAsc: boolean };

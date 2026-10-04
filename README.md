@@ -30,6 +30,8 @@ npm test           # testes das regras (tests/*.test.ts)
 - `tests/planilha.test.ts` — leitura das abas Animes Completos e Historico (formatos de data,
   colunas, ligação pelo nome), raridade.
 - `tests/filtros.test.ts` — filtros, ordenação, `?aba=` e filtros no endereço.
+- `tests/franquias.test.ts` — agrupamento (temporada faltando, OVA, spin-off separado, coluna
+  Franquia juntando com o grupo automático), resumo e filtro/endereço.
 - `tests/retro.test.ts` — retrospectiva/comparação de anos, filtro de status da Temporada no
   endereço e formato da hora de atualização.
 - `tests/appsScript.test.ts` — roda o `apps-script/Temporada.gs` de verdade numa planilha falsa, com
@@ -79,6 +81,7 @@ sido lida com sucesso naquele servidor (cache vazio, ex.: logo após o primeiro 
 | Capas da Temporada Atual | Coluna `Url Imagem` (gviz); reserva: GET no Apps Script | 60 s | Mostra a inicial do nome |
 | Streaming e link da Temporada | GET no Apps Script (colunas `Onde assistir?` e `Link`) | 60 s, tag `temporada` | Botão "assistir" não aparece |
 | Episódios (total / lançados) | GraphQL do AniList | 1 h | Mostra "?" |
+| Franquias (ligações entre títulos) | GraphQL do AniList, ~12 consultas (`lib/franquias.ts`) | 6 h | Última versão boa; sem nenhuma, site sem franquias |
 
 ### Aba "Animes Completos"
 
@@ -88,7 +91,8 @@ coluna (o primeiro que existir vence; ver `COLS` em `lib/sheet.ts`):
 `N°`, `Nome`, `Nome_Ingles`, `Score`, `Episodes`, `Time/episode`, `Rewatched`, `Studio`, `Gênero`,
 `Tema`, `Demografia`, `Temporada` (ex.: "Fall 2024" → season + ano), `Coments`, `Favorite`
 (contém "FAV" = favorito), `Last seen` (DD/MM/AAAA ou AAAA-MM-DD), `Link` / `Imagem` (capa),
-`URL_Pagina` (MyAnimeList), `Link do Anime` (Crunchyroll), `Streaming`.
+`URL_Pagina` (MyAnimeList; o ID do link é usado para as franquias), `Link do Anime` (Crunchyroll),
+`Streaming` e `Franquia` (opcional, ver "Franquias").
 
 Valores de Gênero, Tema, Estúdio e Demografia que só diferem em maiúsculas são unificados
 (fica a grafia mais frequente).
@@ -133,7 +137,7 @@ convertidos sozinhos. Abas válidas: `lib/tabs.ts`.
 - Filtros, busca e ordenação ficam no endereço (`lib/urlFiltros.ts`), lidos pelo servidor: o F5 não
   os perde e dá para salvar ou compartilhar uma busca. Só entra o que difere do padrão. Parâmetros:
   `busca`, `score` e `eps` (faixa `min-max`, ex.: `8-10`, `8-`), `de` e `ate` (AAAA-MM-DD), `season`,
-  `ano`, `estudio`, `genero`, `tema`, `demografia`, `fav`, `rewatch`, `raridade` (repetidos para vários
+  `ano`, `estudio`, `genero`, `tema`, `demografia`, `fav`, `rewatch`, `raridade`, `franquia` (repetidos para vários
   valores), `ordem` e `crescente` (`1`/`0`). Ex.: `/?raridade=SSR&raridade=SR&ano=2024&ordem=score&crescente=0`.
 - Cartas com moldura por raridade; clique abre modal com detalhes, comentário, histórico de
   visualizações, links MAL / Crunchyroll e streaming.
@@ -184,6 +188,24 @@ período (jan até o mês atual) nos dois — dá para desmarcar.
 - Total e lançados vêm do AniList: busca pelo nome e aceita só o resultado com estreia a até
   30 dias do "Dia de inicio"; se não achar, tenta variantes ("II" → "2" / "2nd Season", parte antes
   dos dois-pontos).
+
+### Franquias
+
+`lib/franquias.ts` junta os títulos da planilha que o AniList liga como **continuação** (SEQUEL/PREQUEL)
+ou **história paralela** (SIDE_STORY: OVAs, especiais e filmes da mesma história). Spin-offs (ex.:
+Vigilante, de Boku no Hero; Gun Gale Online, de SAO) e crossovers (Isekai Quartet) ficam separados.
+O tipo PARENT não é usado de propósito: é por ele que os spin-offs apontam de volta para a série.
+
+- Títulos se ligam também através de um que não está na planilha (viu a 1ª e a 3ª temporada → ligadas
+  pela 2ª). Só grupos com 2+ títulos viram franquia.
+- Nome: o título mais curto do grupo ("Berserk", "Jujutsu Kaisen").
+- **Coluna `Franquia`** (opcional, na aba Animes Completos): o que estiver escrito manda. Se for igual
+  (sem ligar para maiúsculas) ao nome de uma franquia automática, o título entra nela. Ex.: o AniList
+  trata *Kenpuu Denki Berserk* (1997) como "versão alternativa", não continuação; escrever `Berserk`
+  nela junta com os filmes e a série de 2016.
+- Onde aparece: painel **FRANQUIAS** no Stats (tempo, episódios, nota média, evolução da nota do 1º
+  ao último título, rewatches; ordenável; clique no nome filtra a Anime List), filtro **Franquia**
+  na gaveta de filtros (`?franquia=` no endereço) e linha FRANQUIA no modal do anime.
 
 ## No celular
 
@@ -240,7 +262,8 @@ app/
   api/temporada/        rota POST que grava na aba Temporada Atual
   icon.svg, apple-icon.png
 lib/
-  dados.ts              cache das 3 abas (60 s), com hora da leitura e a última versão boa
+  dados.ts              cache das 3 abas (60 s) e das franquias (6 h), com hora da leitura e a última versão boa
+  franquias.ts          ligações do AniList → franquias; resumo de cada uma
   types.ts              tipo Anime, raridades (tierOf)
   tabs.ts               abas do site e validação do ?aba= (servidor e cliente)
   urlFiltros.ts         filtros e ordenação ↔ parâmetros do endereço (servidor e cliente)
@@ -261,6 +284,7 @@ components/
   Collection.tsx, Card.tsx, Poster.tsx, DetailModal.tsx
   Stats.tsx             gráficos
   Retro.tsx             retrospectiva do ano e comparação entre anos
+  Franquias.tsx         painel de franquias do Stats
   Season.tsx            aba Temporada (filtro de status, episódios, onde assistir, senha)
 apps-script/
   Temporada.gs          script do Google colado na planilha

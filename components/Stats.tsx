@@ -7,11 +7,14 @@ import type { Viewing } from "@/lib/history";
 import { fmtDate, fmtMonth } from "@/lib/format";
 import Poster from "./Poster";
 import Retrospectiva from "./Retro";
+import Franquias from "./Franquias";
 
 const TIER_OF_SCORE = (s: number): Tier => (s >= 10 ? "SSR" : s >= 9 ? "SR" : s >= 8 ? "R" : "N");
 const CAT = ["var(--red)", "var(--cyan)", "var(--gold)", "var(--violet)", "var(--gray)"];
 
-export default function Stats({ rows, history, onOpen }: { rows: Anime[]; history: Viewing[]; onOpen: (a: Anime) => void }) {
+export default function Stats({ rows, history, onOpen, onFranquia }: {
+  rows: Anime[]; history: Viewing[]; onOpen: (a: Anime) => void; onFranquia: (nome: string) => void;
+}) {
   if (!rows.length) {
     return (
       <section className="empty">
@@ -69,6 +72,8 @@ export default function Stats({ rows, history, onOpen }: { rows: Anime[]; histor
           ))}
         </div>
       </Panel>
+
+      <Franquias rows={rows} onFranquia={onFranquia} />
 
       {rw.length > 0 && (
         <Panel title="MAIS REASSISTIDOS" note={`// top ${rw.length}`}>

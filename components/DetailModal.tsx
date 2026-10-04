@@ -33,6 +33,7 @@ export default function DetailModal({ anime, history, onClose }: { anime: Anime 
     ["EPISÓDIOS", `${anime.eps}${anime.minPerEp ? ` × ${anime.minPerEp} min` : ""}`],
     ["VISTO EM", fmtDate(anime.lastSeen)],
     ["STREAMING", anime.streaming || "—"],
+    ...(anime.franquia ? [["FRANQUIA", anime.franquia] as [string, string]] : []),
   ];
 
   return (

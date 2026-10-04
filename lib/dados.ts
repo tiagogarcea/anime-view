@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { loadAnimes } from "./sheet";
 import { loadHistory } from "./history";
 import { loadTemporada } from "./temporada";
+import { buscarRelacoes } from "./franquias";
 
 /**
  * Cache das três abas da planilha, com a hora em que cada uma foi lida.
@@ -17,3 +18,13 @@ const lido = <T>(load: () => Promise<T>) => async (): Promise<Lido<T>> => ({ dad
 export const lerAnimes = unstable_cache(lido(loadAnimes), ["animes-v1"], { revalidate: 60 });
 export const lerHistorico = unstable_cache(lido(loadHistory), ["historico-v1"], { revalidate: 60 });
 export const lerTemporada = unstable_cache(lido(loadTemporada), ["temporada-v1"], { revalidate: 60, tags: ["temporada"] });
+
+/**
+ * Ligações do AniList para montar as franquias (lib/franquias.ts): ~12 consultas para a planilha toda,
+ * então ficam 6 h em cache. Anime novo na planilha entra na franquia na próxima releitura.
+ */
+export const lerRelacoes = unstable_cache(
+  lido(async () => buscarRelacoes((await loadAnimes()).map((a) => a.malId))),
+  ["franquias-v1"],
+  { revalidate: 6 * 3600 },
+);

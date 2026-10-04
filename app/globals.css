@@ -391,6 +391,18 @@ select, .dir {
   .retro-meses { gap: 3px; }
 }
 
+/* Franquias (Stats) */
+.fr-scroll { overflow-x: auto; }
+.fr-tab { width: 100%; border-collapse: collapse; font-size: 13px; }
+.fr-tab th { padding: 6px 10px; border-bottom: 1px solid var(--line-2); font-size: 11px; font-weight: 400; letter-spacing: 1px; color: var(--muted); text-align: right; white-space: nowrap; }
+.fr-tab td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.fr-tab .fr-nome { text-align: left; width: 100%; white-space: normal; }
+.fr-link { padding: 0; border: 0; background: none; color: var(--text); font-family: var(--display); font-size: 14px; font-weight: 600; text-align: left; }
+.fr-link:hover { color: var(--cyan); text-decoration: underline; }
+.fr-tab .up { color: var(--green); } .fr-tab .down { color: var(--red); }
+@media (max-width: 520px) { .fr-tab .fr-nome { min-width: 170px; } }
+.fr-mais { align-self: flex-start; padding: 6px 12px; border: 1px solid var(--line-2); background: none; color: var(--cyan); font-size: 12px; }
+
 /* Tooltip leve para qualquer elemento com data-tip */
 [data-tip]:hover::after {
   content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);

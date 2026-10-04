@@ -26,6 +26,12 @@ export type Anime = {
   crUrl: string;
   streaming: string;
   tier: Tier;
+  /** ID do MyAnimeList, tirado de URL_Pagina (0 = sem link) */
+  malId: number;
+  /** coluna opcional "Franquia" da planilha: se preenchida, manda no agrupamento */
+  franquiaManual: string;
+  /** franquia (2+ títulos ligados: continuações e histórias paralelas); "" = título sozinho. Ver lib/franquias.ts */
+  franquia: string;
 };
 
 export const TIERS: Tier[] = ["SSR", "SR", "R", "N"];

@@ -82,6 +82,13 @@ export default function App({ animes, history, temporada, atualizado, temporadaA
     setPick(suggest(animes));
   }, [animes]);
 
+  // clique numa franquia no Stats: filtra a Anime List por ela (mantendo os outros filtros)
+  const verFranquia = (nome: string) => {
+    setFilters((f) => ({ ...f, franquia: [nome] }));
+    setTab("deck");
+    window.scrollTo({ top: 0 });
+  };
+
   const reroll = () => setPick(suggest(result.rows, pick?.id));
   const clearAll = () => {
     setFilters(EMPTY_FILTERS);
@@ -119,7 +126,7 @@ export default function App({ animes, history, temporada, atualizado, temporadaA
         {tab === "deck" ? (
           <Collection rows={rows} onOpen={setOpen} onClear={clearAll} />
         ) : (
-          <Stats rows={result.rows} history={history} onOpen={setOpen} />
+          <Stats rows={result.rows} history={history} onOpen={setOpen} onFranquia={verFranquia} />
         )}
 
         </>

@@ -1,6 +1,6 @@
 import { Anime, TIERS } from "./types";
 
-export type MultiKey = "season" | "ano" | "studio" | "genero" | "tema" | "demografia" | "fav" | "rewatch" | "tier";
+export type MultiKey = "season" | "ano" | "studio" | "genero" | "tema" | "demografia" | "fav" | "rewatch" | "tier" | "franquia";
 
 export type Filters = {
   q: string;
@@ -29,6 +29,7 @@ export const EMPTY_FILTERS: Filters = {
   fav: [],
   rewatch: [],
   tier: [],
+  franquia: [],
 };
 
 /** Ordem igual à sidebar do Streamlit: cada filtro só oferece opções que sobraram dos anteriores. */
@@ -42,6 +43,8 @@ export const MULTI: { key: MultiKey; label: string; get: (a: Anime) => string }[
   { key: "fav", label: "Favorito", get: (a) => a.favorite },
   { key: "rewatch", label: "Rewatched (nº vezes)", get: (a) => String(a.rewatch) },
   { key: "tier", label: "Raridade", get: (a) => a.tier },
+  // só títulos com franquia (2+ ligados) entram nas opções; ver lib/franquias.ts
+  { key: "franquia", label: "Franquia", get: (a) => a.franquia },
 ];
 
 export type Option = { value: string; count: number };

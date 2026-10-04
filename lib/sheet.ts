@@ -27,6 +27,7 @@ const COLS = {
   mal: ["URL_Pagina", "URL Pagina", "MAL"],
   cr: ["Link do Anime", "Crunchyroll"],
   streaming: ["Streaming"],
+  franquia: ["Franquia", "Franchise"],
 } as const;
 
 function clean(v: unknown): string {
@@ -100,6 +101,9 @@ export function parseSheet(csv: string): Anime[] {
       crUrl: url(get(r, "cr")),
       streaming: get(r, "streaming"),
       tier: tierOf(score),
+      malId: Number(get(r, "mal").match(/myanimelist\.net\/anime\/(\d+)/)?.[1] ?? 0),
+      franquiaManual: get(r, "franquia"),
+      franquia: "",
     });
   });
 
