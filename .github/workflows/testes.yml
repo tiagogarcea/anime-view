@@ -1,0 +1,24 @@
+# Roda os testes e a checagem de tipos a cada push e pull request (✓/✗ no commit, no GitHub).
+# A Vercel também roda os testes antes de publicar (script "build" do package.json): se falharem,
+# ela não publica e a versão anterior continua no ar.
+name: testes
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Checagem de tipos
+        run: npm run typecheck
+      - name: Testes das regras
+        run: npm test

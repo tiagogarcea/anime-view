@@ -415,6 +415,12 @@ html.url-pendente .conteudo { visibility: hidden; animation: aparecer 0s 2.5s fo
 .subtab.on { color: var(--cyan); border-bottom-color: var(--cyan); }
 @media (max-width: 520px) { .subtab { flex: 1; padding: 10px 4px; letter-spacing: 1px; font-size: 11px; } }
 
+/* Aviso de linhas do Historico sem par (components/AvisoHistorico.tsx) */
+.aviso-hist { margin: 0 0 16px; padding: 10px 14px; border: 1px solid var(--gold); color: var(--gold); font-size: 13px; }
+.aviso-hist-topo { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
+.aviso-hist ul { margin: 10px 0 6px; padding-left: 18px; color: var(--text); }
+.aviso-hist li { margin: 3px 0; }
+
 /* Aviso quando um pedaço da página dá erro (components/Seguro.tsx) */
 .seguro { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 16px 20px; border: 1px dashed var(--gold); color: var(--gold); font-size: 13px; }
 

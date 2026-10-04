@@ -6,6 +6,8 @@
   dados, variável de ambiente, rota, arquivo novo ou removido, mudança no Apps Script) deve atualizar
   o `README.md` na mesma tarefa. O README é a documentação completa do projeto, em português.
 - Se mudar `apps-script/Temporada.gs`, lembrar o usuário de reimplantar o script (Nova versão).
-- **Testes:** rodar `npm test` e `npm run build` antes de publicar. Ao criar ou mudar uma regra
-  (status da Temporada, leitura da planilha, filtros, Apps Script), criar/atualizar o teste em `tests/`.
+- **Testes:** rodar `npm test`, `npm run typecheck` e `npm run build` antes de publicar (o build da
+  Vercel já roda os testes e não publica se falharem; o GitHub Actions também roda a cada push). Ao
+  criar ou mudar uma regra (status da Temporada, leitura da planilha, filtros, Apps Script, franquias),
+  criar/atualizar o teste em `tests/`.
 - Esta pasta é o repositório git (a antiga `Anime-View-Git/` não é mais usada).

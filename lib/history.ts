@@ -67,14 +67,60 @@ const chave = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
 
 /**
  * Liga cada linha do Historico ao anime da aba principal pelo nome (ignorando maiúsculas e espaços).
- * Se a linha não tiver nome (formato antigo), usa o N°. Linhas sem correspondência são descartadas.
+ * Se a linha não tiver nome (formato antigo), usa o N°. Linhas sem correspondência ficam de fora
+ * (e aparecem no aviso do Stats, ver historicoSemPar).
  */
 export function resolveHistory(history: Viewing[], animes: { n: number; nome: string }[]): Viewing[] {
   const porNome = new Map(animes.map((a) => [chave(a.nome), a.n]));
+  const ns = new Set(animes.map((a) => a.n));
   const out: Viewing[] = [];
   for (const v of history) {
-    const n = v.nome ? porNome.get(chave(v.nome)) : v.n;
+    const n = v.nome ? porNome.get(chave(v.nome)) : ns.has(v.n) ? v.n : undefined;
     if (n) out.push({ ...v, n });
   }
   return out;
+}
+
+/** Linha do Historico que não achou o anime na aba principal, com o nome mais parecido (se houver). */
+export type SemPar = { ym: string; nome: string; sugestao: string };
+
+/**
+ * As linhas que resolveHistory descarta: nome que não existe na aba "Animes Completos" (erro de
+ * digitação, anime renomeado) ou, no formato antigo, N° que não existe. O Stats mostra um aviso com
+ * elas, para não sumirem da retrospectiva sem ninguém perceber.
+ */
+export function historicoSemPar(history: Viewing[], animes: { n: number; nome: string }[]): SemPar[] {
+  const nomes = new Map(animes.map((a) => [chave(a.nome), a.nome]));
+  const ns = new Set(animes.map((a) => a.n));
+  return history
+    .filter((v) => (v.nome ? !nomes.has(chave(v.nome)) : !ns.has(v.n)))
+    .map((v) => ({ ym: v.ym, nome: v.nome || `N° ${v.n}`, sugestao: v.nome ? parecido(chave(v.nome), nomes) : "" }));
+}
+
+/** Nome da lista mais próximo (distância de edição até ~20% do tamanho), para sugerir a correção. */
+function parecido(alvo: string, nomes: Map<string, string>): string {
+  let melhor = "";
+  let menor = Math.max(2, Math.floor(alvo.length * 0.2)) + 1;
+  for (const [k, original] of nomes) {
+    if (Math.abs(k.length - alvo.length) >= menor) continue;
+    const d = distancia(alvo, k, menor);
+    if (d < menor) { menor = d; melhor = original; }
+  }
+  return melhor;
+}
+
+/** Distância de Levenshtein; para de contar quando passa de `teto`. */
+function distancia(a: string, b: string, teto: number): number {
+  let ant = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    let minLinha = i;
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(ant[j] + 1, cur[j - 1] + 1, ant[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      minLinha = Math.min(minLinha, cur[j]);
+    }
+    if (minLinha >= teto) return teto;
+    ant = cur;
+  }
+  return ant[b.length];
 }

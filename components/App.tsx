@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Anime } from "@/lib/types";
-import type { Viewing } from "@/lib/history";
+import type { SemPar, Viewing } from "@/lib/history";
 import type { SeasonItem } from "@/lib/temporada";
 import Season from "./Season";
 import { applyFilters, DEFAULT_SORT, EMPTY_FILTERS, Filters, sortRows, SortKey } from "@/lib/filters";
@@ -17,6 +17,7 @@ import Collection from "./Collection";
 import DetailModal from "./DetailModal";
 import Stats from "./Stats";
 import Seguro from "./Seguro";
+import AvisoHistorico from "./AvisoHistorico";
 import { CAMINHO, Tab, tabDoCaminho, tabValida } from "@/lib/tabs";
 import { agruparFranquias, type Relacoes } from "@/lib/franquias";
 import { escreverBusca, lerBusca } from "@/lib/urlFiltros";
@@ -31,11 +32,14 @@ const urlDaTab = (t: Tab) => {
   return CAMINHO[t] + (s ? `?${s}` : "");
 };
 
-export default function App({ animes: base, relacoes: relacoesProntas, history, temporada, atualizado, temporadaAtualizada, children }: {
+export default function App({ animes: base, relacoes: relacoesProntas, history, semPar, temporada, atualizado, temporadaAtualizada, children }: {
   animes: Anime[];
   /** ligações do AniList para as franquias; null = a página saiu sem elas (o navegador busca em /api/franquias) */
   relacoes: Relacoes | null;
-  history: Viewing[]; temporada: SeasonItem[];
+  history: Viewing[];
+  /** linhas do Historico que não acharam o anime (aviso no Stats) */
+  semPar: SemPar[];
+  temporada: SeasonItem[];
   /** hora em que a planilha foi lida ("19:43:28 03/10/2026"); se o Google falhar, é a da última leitura boa */
   atualizado: string; temporadaAtualizada: string;
   children: React.ReactNode;
@@ -160,6 +164,7 @@ export default function App({ animes: base, relacoes: relacoesProntas, history, 
                     RETROSPECTIVA E FRANQUIAS
                   </button>
                 </nav>
+                <AvisoHistorico linhas={semPar} />
                 <Stats secao={tab === "retro" ? "retro" : "geral"} rows={result.rows} history={history} onOpen={setOpen} onFranquia={verFranquia} franquiasProntas={relacoes !== null} />
               </>
             )}

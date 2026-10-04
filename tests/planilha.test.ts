@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parseSheet } from "@/lib/sheet";
-import { parseHistory, resolveHistory } from "@/lib/history";
+import { historicoSemPar, parseHistory, resolveHistory } from "@/lib/history";
 import { tierOf } from "@/lib/types";
 
 const CSV = [
@@ -67,4 +67,22 @@ test("resolveHistory: liga pelo nome (sem ligar para maiúsculas e espaços) e d
     animes,
   );
   assert.deepEqual(h.map((v) => v.n), [7, 9, 9]);
+});
+
+test("historicoSemPar: linhas que não acharam o anime, com sugestão do nome parecido", () => {
+  const animes = [{ n: 7, nome: "Frieren" }, { n: 9, nome: "Bocchi the Rock!" }, { n: 12, nome: "Kusuriya no Hitorigoto" }];
+  const h = [
+    { ym: "2025-03", n: 0, nome: " frieren ", rewatch: 0 }, // bate (maiúsculas/espaços não importam)
+    { ym: "2025-04", n: 0, nome: "Bochi the Rock!", rewatch: 0 }, // erro de digitação
+    { ym: "2025-05", n: 0, nome: "Kusuriya no Hitorigoto 2nd Season", rewatch: 0 }, // não existe: longe demais para sugerir
+    { ym: "2025-06", n: 99, nome: "", rewatch: 0 }, // formato antigo com N° que não existe
+    { ym: "2025-07", n: 9, nome: "", rewatch: 0 }, // formato antigo com N° que existe
+  ];
+  assert.deepEqual(historicoSemPar(h, animes), [
+    { ym: "2025-04", nome: "Bochi the Rock!", sugestao: "Bocchi the Rock!" },
+    { ym: "2025-05", nome: "Kusuriya no Hitorigoto 2nd Season", sugestao: "" },
+    { ym: "2025-06", nome: "N° 99", sugestao: "" },
+  ]);
+  // o que fica de fora do resolveHistory é exatamente o que vai para o aviso
+  assert.equal(resolveHistory(h, animes).length + historicoSemPar(h, animes).length, h.length);
 });

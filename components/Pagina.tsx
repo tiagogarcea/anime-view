@@ -1,6 +1,6 @@
 import { after } from "next/server";
 import App from "./App";
-import { resolveHistory } from "@/lib/history";
+import { historicoSemPar, resolveHistory } from "@/lib/history";
 import { lerAnimes, lerHistorico, lerRelacoes, lerTemporada } from "@/lib/dados";
 import { fmtAtualizado } from "@/lib/format";
 
@@ -34,6 +34,7 @@ export default async function Pagina({ children }: { children: React.ReactNode }
       animes={lista}
       relacoes={relacoes?.dados ?? null}
       history={history ? resolveHistory(history.dados, lista) : []}
+      semPar={history ? historicoSemPar(history.dados, lista) : []}
       temporada={temporada?.dados ?? []}
       atualizado={fmtAtualizado(animes.em)}
       temporadaAtualizada={temporada ? fmtAtualizado(temporada.em) : ""}

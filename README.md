@@ -15,9 +15,10 @@ em HTML/SVG (sem biblioteca de gráficos). Fontes: Chakra Petch (títulos) e Jet
 ```bash
 npm install
 npm run dev        # http://localhost:3000
-npm run build      # build de produção (confere tipos)
+npm run build      # roda os testes e, se passarem, o build de produção
 npm run start      # serve o build
 npm test           # testes das regras (tests/*.test.ts)
+npm run typecheck  # checagem de tipos (gera os tipos das rotas antes)
 ```
 
 ## Testes
@@ -28,7 +29,7 @@ npm test           # testes das regras (tests/*.test.ts)
   marcar o último episódio lançado (e que nunca vira `X` sozinho, caso Bleach), leitura da aba
   Temporada Atual (gviz), escolha do resultado do AniList, nome do site pelo link.
 - `tests/planilha.test.ts` — leitura das abas Animes Completos e Historico (formatos de data,
-  colunas, ligação pelo nome), raridade.
+  colunas, ligação pelo nome, linhas sem par e sugestão de nome), raridade.
 - `tests/filtros.test.ts` — filtros, ordenação, endereço de cada aba e filtros no endereço.
 - `tests/franquias.test.ts` — agrupamento (temporada faltando, OVA, spin-off separado, coluna
   Franquia juntando com o grupo automático), resumo e filtro/endereço.
@@ -38,7 +39,12 @@ npm test           # testes das regras (tests/*.test.ts)
   data e fuso controlados: gatilho diário (estreias, virada semanal de `V`, fuso da planilha),
   links/imagens das células e senha do `doPost`.
 
-Rode `npm test` antes de publicar; ao mudar uma regra, atualize o teste correspondente.
+Ao mudar uma regra, atualize o teste correspondente. Os testes rodam sozinhos em dois lugares:
+
+- **Na Vercel, antes de publicar:** o script `build` é `npm test && next build`. Se um teste falhar, o
+  build falha, a Vercel não publica e a versão anterior continua no ar.
+- **No GitHub, a cada push** (`.github/workflows/testes.yml`): checagem de tipos e testes; o resultado
+  aparece como ✓/✗ no commit.
 
 No Windows, se o PowerShell bloquear o `npm.ps1`, use `npm.cmd run dev`.
 
@@ -117,8 +123,11 @@ Uma linha por vez que um anime foi assistido. Colunas: `Data`/`Mês` (DD/MM/AAAA
 "Março 2023"; pode haver mais de uma, vale a primeira reconhecida), `Nome`/`Anime`, `N°` (formato
 antigo, usado só se não houver nome) e `Rewatch` (0 = primeira vez, 1 = primeiro rewatch…).
 A ligação com "Animes Completos" é **pelo nome** (ignorando maiúsculas e espaços); linhas sem
-correspondência são descartadas. Alimenta o gráfico "Assistidos ao longo do tempo" e o histórico
-de visualizações no modal de detalhes.
+correspondência ficam de fora, mas **não somem em silêncio**: o Stats mostra um aviso amarelo
+("⚠ N linhas da aba Historico não acharam o anime…", `components/AvisoHistorico.tsx`) com o mês, o
+nome digitado e, quando há um nome parecido na lista, "você quis dizer …?" (`historicoSemPar` em
+`lib/history.ts`). Corrigido o nome na planilha, o aviso some na renovação seguinte. Alimenta a
+retrospectiva, o gráfico "Assistidos ao longo do tempo" e o histórico de visualizações no modal.
 
 ### Aba "Temporada Atual"
 
@@ -299,7 +308,7 @@ lib/
   tabs.ts               abas e endereços (/, /stats, /stats/retrospectiva, /temporada)
   urlFiltros.ts         filtros e ordenação ↔ parâmetros do endereço (servidor e cliente)
   sheet.ts              CSV "Animes Completos" → Anime[]
-  history.ts            CSV "Historico" → Viewing[], ligação por nome
+  history.ts            CSV "Historico" → Viewing[], ligação por nome, linhas sem par
   temporada.ts          gviz "Temporada Atual" (com Url Imagem) + streaming/link/capas reserva
                         (Apps Script) + AniList
   filters.ts            filtros em cascata e ordenação
@@ -311,6 +320,7 @@ components/
   Pagina.tsx            carrega a planilha (com prazo para fontes lentas) e monta o App
   App.tsx               estado (aba pelo endereço, filtros e ordenação, franquias; modal)
   Seguro.tsx            protege cada pedaço: erro mostra aviso só no lugar dele
+  AvisoHistorico.tsx    aviso no Stats de linhas do Historico sem par na lista
   Header.tsx            marca e abas
   Hero.tsx              puxada do dia
   KpiStrip.tsx, FilterBar.tsx, FilterDrawer.tsx
@@ -324,6 +334,7 @@ apps-script/
 public/covers/          capas ampliadas
 public/icon-*.png       ícones do app instalado
 tests/                  testes das regras (npm test)
+.github/workflows/      testes a cada push no GitHub
 ```
 
 ## Paridade com o Streamlit (`Anime-Tracker/app.py`)
