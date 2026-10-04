@@ -15,7 +15,7 @@ const FUSO = "America/Sao_Paulo";
 type Linha = { nome: string; inicio: string | null; ep?: number | ""; sem: string };
 
 /** Monta o script com a planilha falsa. `agora` é um instante ISO; datas da planilha são meia-noite no FUSO. */
-function montar(agora: string, linhas: Linha[], props: Record<string, string> = {}, episodiosAniList: Record<string, number> = {}) {
+function montar(agora: string, linhas: Linha[], props: Record<string, string> = {}, episodiosAniList: Record<string, number> = {}, horaUtcDaCelula = "03:00:00") {
   const AGORA = Date.parse(agora);
   const Real = Date;
   class FakeDate extends Real {
@@ -26,7 +26,7 @@ function montar(agora: string, linhas: Linha[], props: Record<string, string> = 
     static now() { return AGORA; }
   }
   // meia-noite no fuso de São Paulo (UTC-3) = 03:00 UTC
-  const dataDaCelula = (iso: string) => new FakeDate(`${iso}T03:00:00Z`);
+  const dataDaCelula = (iso: string) => new FakeDate(`${iso}T${horaUtcDaCelula}Z`);
   const valores: unknown[][] = [
     CAB,
     ...linhas.map((l, i) => [i + 1, l.nome, l.inicio ? dataDaCelula(l.inicio) : "", l.ep ?? "", l.sem, ""]),
@@ -87,6 +87,15 @@ test('gatilho: na segunda da semana da estreia, "-" vira "X" (estreias de seg, t
   const s = montar("2026-10-05T09:00:00Z", ESTREIAS, { ULTIMA_VIRADA: "2026-10-05" }); // 06h em SP
   s.ctx.atualizarEstreias();
   assert.deepEqual(s.status(), ["X", "X", "X", "-", "-"]);
+});
+
+test("gatilho: célula de data em meia-noite UTC (fuso do script ≠ da planilha) não adianta a estreia de segunda", () => {
+  // domingo 04/10 às 06h em SP; Psyren estreia na segunda 05/10, a célula chega como 05/10 00:00 UTC (= 04/10 21h em SP)
+  for (const hora of ["03:00:00", "00:00:00"]) {
+    const s = montar("2026-10-04T09:00:00Z", ESTREIAS, { ULTIMA_VIRADA: "2026-09-28" }, {}, hora);
+    s.ctx.atualizarEstreias();
+    assert.deepEqual(s.status(), ["-", "-", "-", "-", "-"], `célula às ${hora} UTC`);
+  }
 });
 
 test("gatilho: domingo 23h30 em SP (já segunda em UTC) ainda não muda — vale o fuso da planilha", () => {

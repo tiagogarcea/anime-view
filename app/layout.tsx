@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "Anime View", statusBarStyle: "black" },
 };
 
-export const viewport: Viewport = { themeColor: "#07070c" };
+export const viewport: Viewport = { themeColor: "#07070c", viewportFit: "cover" };
 
 /**
  * As páginas vêm prontas (iguais para todos), e os filtros do endereço (?busca=, ?status=…) só são

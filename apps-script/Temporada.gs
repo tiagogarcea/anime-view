@@ -130,7 +130,7 @@ function atualizarEstreias() {
 
     // "-" só vira "X" a partir da segunda-feira da semana da estreia
     // (estreia 05/10 ou 06/10/2026 → muda em 05/10, que é segunda)
-    if (status === "-" && inicio instanceof Date && hoje >= segundaDe(isoDia(inicio))) {
+    if (status === "-" && inicio instanceof Date && hoje >= segundaDe(isoDaCelula(inicio))) {
       sheet.getRange(r + 1, cSem + 1).setValue("X");
     } else if (status === "V" && viraSemana) {
       const visto = Number(values[r][cEp]) || 0;
@@ -152,6 +152,16 @@ function segundaDe(iso) {
 /** Data no fuso da planilha, "AAAA-MM-DD" (é o dia que aparece na célula). */
 function isoDia(d) {
   return Utilities.formatDate(d, SpreadsheetApp.getActive().getSpreadsheetTimeZone(), "yyyy-MM-dd");
+}
+
+/**
+ * Dia escrito numa célula de data. A célula chega como meia-noite, mas em qual fuso depende do
+ * script e da planilha; se os dois diferirem, a meia-noite cai no dia anterior ao formatar
+ * (05/10 virava 04/10 e a estreia de segunda mudava um dia antes). Somar 12h leva ao meio do
+ * dia certo em qualquer um dos fusos.
+ */
+function isoDaCelula(d) {
+  return isoDia(new Date(d.getTime() + 12 * 3600 * 1000));
 }
 
 /** Total de episódios pelo AniList; só aceita o resultado cuja estreia fica a até 30 dias da planilha. */

@@ -217,6 +217,9 @@ período (jan até o mês atual) nos dois — dá para desmarcar.
   (segunda) ou 06/10/2026 (terça) → muda em 05/10; estreia em 12/10 → só em 12/10. O site já mostra
   assim (`semanalEfetivo`) e o gatilho diário do script grava na planilha. As datas são comparadas
   como texto AAAA-MM-DD (no script, no fuso da planilha), então o fuso não adianta a mudança.
+  No script, o dia da célula de estreia é lido com 12 h de folga (`isoDaCelula`): se o fuso do script
+  e o da planilha diferirem, a meia-noite da célula caía no dia anterior e uma estreia de segunda
+  (ex.: Psyren, 05/10) mudava de `-` para `X` já no domingo.
 - Total e lançados vêm do AniList: busca pelo nome e aceita só o resultado com estreia a até
   30 dias do "Dia de inicio"; se não achar, tenta variantes ("II" → "2" / "2nd Season", parte antes
   dos dois-pontos).
@@ -245,8 +248,21 @@ O tipo PARENT não é usado de propósito: é por ele que os spin-offs apontam d
 O site é instalável (`app/manifest.ts`): no Android/Chrome, menu › **Instalar app** (ou "Adicionar à
 tela inicial"); no iPhone/Safari, Compartilhar › **Adicionar à Tela de Início**. Abre em tela cheia,
 sem a barra do navegador, com o ícone do site (`public/icon-192.png`, `icon-512.png` e
-`icon-maskable-512.png`, que o Android recorta em círculo/quadrado). Em telas pequenas as abas ficam
-numa linha só e os painéis viram uma coluna.
+`icon-maskable-512.png`, que o Android recorta em círculo/quadrado). O app instalado abre o próprio
+site, então toda mudança publicada já aparece nele.
+
+Layout de celular (bloco `@media (max-width: 640px)` no fim de `app/globals.css`, pensado para uma mão):
+
+- **Abas na barra de baixo**, fixa e respeitando a área do botão home do iPhone
+  (`viewportFit: "cover"` em `app/layout.tsx`); o cabeçalho fica só com a marca.
+- **Sem o zoom de 85%** do desktop (`.shell`): o texto volta ao tamanho normal.
+- **Alvos de toque de 44 px** (botões de status/episódio da Temporada, filtros, chips, ✕) e campos com
+  16 px, para o iPhone não dar zoom sozinho ao tocar num campo.
+- **Puxada do dia compacta** (capa pequena, sem citação) para a lista aparecer mais cedo.
+- **Barra de filtros**: busca em largura total, ordenação numa linha e chips numa linha rolável, com
+  "+ filtros" sempre na frente.
+- **Detalhes do anime como folha de baixo** (ocupa a largura toda, sobe do rodapé).
+- Stats e Temporada em coluna única, com painéis mais enxutos; o nome do dia fica fixo ao rolar.
 
 ## API
 
@@ -321,7 +337,7 @@ components/
   App.tsx               estado (aba pelo endereço, filtros e ordenação, franquias; modal)
   Seguro.tsx            protege cada pedaço: erro mostra aviso só no lugar dele
   AvisoHistorico.tsx    aviso no Stats de linhas do Historico sem par na lista
-  Header.tsx            marca e abas
+  Header.tsx            marca e abas (barra de baixo no celular)
   Hero.tsx              puxada do dia
   KpiStrip.tsx, FilterBar.tsx, FilterDrawer.tsx
   Collection.tsx, Card.tsx, Poster.tsx, DetailModal.tsx

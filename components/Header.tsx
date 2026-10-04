@@ -19,13 +19,13 @@ export default function Header({ tab, onTab }: Props) {
       </div>
       <nav className="tabs" aria-label="Seções">
         <button type="button" className={tab === "deck" ? "tab on" : "tab"} onClick={() => onTab("deck")}>
-          [ ANIME LIST ]
+          <span className="br">[ </span>ANIME LIST<span className="br"> ]</span>
         </button>
         <button type="button" className={tab === "stats" || tab === "retro" ? "tab on" : "tab"} onClick={() => onTab("stats")}>
-          [ STATS ]
+          <span className="br">[ </span>STATS<span className="br"> ]</span>
         </button>
         <button type="button" className={tab === "temporada" ? "tab on" : "tab"} onClick={() => onTab("temporada")}>
-          [ TEMPORADA ]
+          <span className="br">[ </span>TEMPORADA<span className="br"> ]</span>
         </button>
       </nav>
       <div className="sync">

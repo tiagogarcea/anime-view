@@ -559,3 +559,125 @@ a.swatch:hover, a.swatch:focus-visible { border-color: var(--cyan); color: var(-
   .sname { white-space: normal; }
   .season-count { margin-left: 0; }
 }
+
+/* ── Celular (≤ 640px): foco em uso com uma mão ──────────
+   Abas na barra de baixo (alcance do polegar), sem o zoom de 85% do desktop, alvos de toque de 44px,
+   campos com 16px (o iPhone dá zoom sozinho em campo menor), modal como folha de baixo. */
+html { -webkit-text-size-adjust: 100%; }
+button, a, select, summary { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+@media (max-width: 640px) {
+  body { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+  .shell { zoom: 1; padding: 0 14px 24px; }
+  input, select, textarea { font-size: 16px !important; }
+
+  /* cabeçalho enxuto; as abas vão para a barra fixa de baixo */
+  .top { min-height: 52px; padding: 10px 0; gap: 12px; flex-wrap: nowrap; }
+  .brand { font-size: 20px; gap: 9px; letter-spacing: 1px; }
+  .brand-mark { width: 30px; height: 30px; border-radius: 7px; }
+  .tabs {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; width: 100%; gap: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: rgba(7, 7, 12, 0.96); backdrop-filter: blur(10px); border-top: 1px solid var(--line-2);
+  }
+  .tab { flex: 1; height: 56px; padding: 0 2px; border: 0; border-top: 2px solid transparent; font-size: 12px; letter-spacing: 1px; }
+  .tab.on { border-top-color: var(--red); background: rgba(255, 45, 61, 0.08); }
+  .tab .br { display: none; }
+
+  /* puxada do dia compacta */
+  .hero { margin-top: 14px; min-height: 0; }
+  .hero-inner { min-height: 0; padding: 22px 16px 20px; gap: 18px; align-items: stretch; }
+  .hero-card { width: 112px; align-self: center; padding: 2px; }
+  .hero-card .card-top, .hero-card-stats { display: none; }
+  .hero-card .card-in { padding: 5px; gap: 5px; }
+  .hero-card-name { display: none; }
+  .hero-title { font-size: clamp(28px, 9vw, 40px); }
+  .hero-text { gap: 12px; }
+  .eyebrow { font-size: 11px; letter-spacing: 2px; }
+  .eyebrow .muted { display: none; }
+  .hero-specs { align-self: stretch; }
+  .hero-specs div { flex: 1 1 45%; border-bottom: 1px solid var(--line-2); }
+  .hero .hero-quote { display: none; }
+  .hero-actions .btn { flex: 1 1 40%; }
+  .hero-actions .btn.gold { flex-basis: 100%; }
+  .btn { height: 48px; padding: 0 14px; }
+  .bracket { width: 22px; height: 22px; }
+
+  /* faixa de números menor */
+  .shell > .kpis:not(.with-rarity) { margin-top: 16px; }
+  .kpi { padding: 12px 14px; gap: 6px; }
+  .kpi-head { font-size: 10px; letter-spacing: 1px; }
+  .kpi-value { font-size: 26px; }
+
+  /* barra de filtros: título, busca, ordenar e chips em linha rolável */
+  .bar { padding: 20px 0 12px; gap: 10px; }
+  .bar-title { order: 1; font-size: 22px; margin: 0; }
+  .bar > .muted { order: 1; }
+  .sort { order: 2; width: 100%; gap: 8px; }
+  .search { flex: 1 1 100%; height: 46px; }
+  .sort label:not(.search) { flex: 1; min-width: 0; }
+  .sort label:not(.search) .muted { display: none; }
+  .sort label:not(.search) select { width: 100%; }
+  select, .dir { height: 44px; }
+  .sort > .muted { margin-left: auto; font-size: 12px; }
+  .chips { order: 3; flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; gap: 8px; margin: 0 -14px; padding: 2px 14px 6px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex-shrink: 0; padding: 11px 14px; white-space: nowrap; }
+  .chip.add { order: -1; border: 1px solid var(--cyan); color: var(--cyan); }
+  .chip.ghost { order: 99; }
+
+  /* cartas */
+  .grid { gap: 10px; }
+  .card:hover { transform: none; }
+  .card-in { padding: 6px; }
+  .card-name { font-size: 13px; }
+
+  /* gaveta de filtros */
+  .drawer { width: 100%; border-left: 0; }
+  .opt { padding: 10px 14px; font-size: 13px; }
+  .mini-search { height: 44px; }
+  .date input { height: 46px; }
+  .drawer-foot .btn { height: 50px; }
+  .icon-btn { width: 44px; height: 44px; }
+
+  /* detalhes como folha de baixo */
+  .modal-wrap { align-items: flex-end; padding: 0; }
+  .modal { width: 100%; max-height: 92dvh; border-radius: 16px 16px 0 0; }
+  .modal-in { gap: 16px; padding: 18px 16px calc(20px + env(safe-area-inset-bottom, 0px)); border-radius: 13px 13px 0 0; }
+  .modal-art { width: 140px; align-self: center; }
+  .modal-title { font-size: 26px; }
+  .modal-x { top: 10px; right: 10px; }
+  .modal .hero-actions .btn { flex: 1 1 40%; }
+
+  /* Stats */
+  .stats { gap: 14px; }
+  .two, .retro-dest { gap: 14px; }
+  .panel { padding: 16px 14px; gap: 12px; }
+  .panel-title { font-size: 16px; }
+  .cols { height: 170px; }
+  .subtabs { margin-bottom: 14px; }
+  .subtab { padding: 14px 4px; }
+  .yr { padding: 10px 12px; }
+  .rw-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .retro-tab th, .retro-tab td { padding: 8px 6px; }
+  .retro-tab td { font-size: 15px; }
+  .retro-ctl, .retro-cmp-sel { gap: 10px; }
+  .retro-cmp-sel select { height: 40px; }
+  .fr-link { padding: 6px 0; }
+
+  /* Temporada: botões de status e episódio fáceis de tocar */
+  .season { margin-top: 14px; }
+  .season-count { gap: 6px; width: 100%; }
+  .sfil { flex: 1 1 40%; justify-content: center; min-height: 44px; }
+  .srow { padding: 8px; gap: 8px 12px; grid-template-columns: 76px minmax(0, 1fr); }
+  .sthumb { width: 76px; height: 106px; }
+  .sname { font-size: 16px; }
+  .sstatus { gap: 6px; }
+  .sbtn { width: 48px; height: 44px; }
+  .sstatus .stotal { align-self: center; }
+  .sstep button { width: 48px; height: 44px; }
+  .sstep input { width: 64px; height: 44px; }
+  .swatch { min-height: 36px; }
+  .day-name { position: sticky; top: 0; z-index: 5; padding-top: 8px; background: var(--bg); }
+
+  .foot { margin-top: 32px; flex-direction: column; gap: 6px; }
+}
