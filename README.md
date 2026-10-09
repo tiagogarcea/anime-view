@@ -67,7 +67,7 @@ push (ou rode `Git_Push.bat`, que faz `git add .`, commit com data/hora e push).
 - **Prazo para fontes lentas** (`components/Pagina.tsx`): Temporada (~7 s com cache vazio) e franquias
   (~12 s) não seguram a renovação: se passarem do prazo, a página sai sem elas e a busca termina em
   segundo plano (`after`). As franquias, se faltarem, o navegador busca em `GET /api/franquias`.
-- **Tempo limite** em toda busca externa (`AbortSignal.timeout`: planilha 15 s, script 10 a 20 s,
+- **Tempo limite** em toda busca externa (`AbortSignal.timeout`: planilha 15 s, script de leitura da Temporada 30 s (ele leva 5 a 18 s; se falhar, a leitura dá erro e o cache mantém a versão anterior, com os links),
   AniList 10 s): nada fica pendurado.
 - **Erro num pedaço não derruba a página**: cada painel e aba fica dentro de `components/Seguro.tsx`,
   que mostra "Não consegui mostrar ... TENTAR DE NOVO" só no lugar dele. Erro geral: `app/error.tsx`

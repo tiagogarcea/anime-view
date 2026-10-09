@@ -150,21 +150,23 @@ export async function loadTemporada(): Promise<SeasonItem[]> {
   await Promise.all([
     // imagens coladas nas células e o link por trás do texto "Link" só saem pelo script do Google.
     // A capa vem da coluna "Url Imagem"; a colada na coluna "Imagem" é só reserva.
+    // O script do Google leva de 5 a 18 s para responder. Se falhar ou estourar o prazo, dá erro de
+    // propósito: assim o cache mantém a última versão boa (com links) em vez de guardar uma sem eles.
     (async () => {
-      try {
-        const r = await fetch(SCRIPT_URL, { cache: "no-store", signal: AbortSignal.timeout(10000) });
-        const j = await r.json();
-        type Extra = { numero: number; imagem?: string; streaming?: string; link?: string };
-        const extras = new Map<number, Extra>((j.itens ?? []).map((x: Extra) => [Number(x.numero), x]));
-        for (const it of itens) {
-          const x = extras.get(it.numero);
-          if (!x) continue;
-          // o Google devolve as imagens em 2048 px: 360 px basta para a capa, 96 px para o logo
-          if (!it.img) it.img = (x.imagem ?? "").replace(/=s\d+(?=[?&]|$)/, "=s360");
-          it.streamingImg = (x.streaming ?? "").replace(/=s\d+(?=[?&]|$)/, "=s96");
-          it.link = /^https?:\/\//i.test(x.link ?? "") ? x.link! : "";
-        }
-      } catch { /* sem script: sem streaming/link, e capa sem URL mostra a inicial */ }
+      const r = await fetch(SCRIPT_URL, { cache: "no-store", signal: AbortSignal.timeout(30000) });
+      if (!r.ok) throw new Error(`Script respondeu ${r.status}`);
+      const j = await r.json();
+      if (!j.ok) throw new Error("Script sem itens");
+      type Extra = { numero: number; imagem?: string; streaming?: string; link?: string };
+      const extras = new Map<number, Extra>((j.itens ?? []).map((x: Extra) => [Number(x.numero), x]));
+      for (const it of itens) {
+        const x = extras.get(it.numero);
+        if (!x) continue;
+        // o Google devolve as imagens em 2048 px: 360 px basta para a capa, 96 px para o logo
+        if (!it.img) it.img = (x.imagem ?? "").replace(/=s\d+(?=[?&]|$)/, "=s360");
+        it.streamingImg = (x.streaming ?? "").replace(/=s\d+(?=[?&]|$)/, "=s96");
+        it.link = /^https?:\/\//i.test(x.link ?? "") ? x.link! : "";
+      }
     })(),
     completarComAniList(itens).catch(() => { /* sem AniList: total fica "?" */ }),
   ]);
