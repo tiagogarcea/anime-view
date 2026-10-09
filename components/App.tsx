@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useOptimistic, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Anime } from "@/lib/types";
 import type { SemPar, Viewing } from "@/lib/history";
@@ -47,7 +47,10 @@ export default function App({ animes: base, relacoes: relacoesProntas, history, 
   // A aba é o endereço (/, /stats, /stats/retrospectiva, /temporada). Trocar de aba é navegar pelo Next:
   // este App fica no layout, então não recarrega nada; voltar/avançar do navegador funciona sozinho.
   const router = useRouter();
-  const tab = tabDoCaminho(usePathname());
+  const tabDaUrl = tabDoCaminho(usePathname());
+  // Os dados já estão no navegador: a aba muda na hora e o endereço acompanha quando o servidor responder
+  // (o pedido da rota pode demorar na renovação de 60 s).
+  const [tab, setTabOtimista] = useOptimistic(tabDaUrl);
   const [relacoes, setRelacoes] = useState<Relacoes | null>(relacoesProntas);
   useEffect(() => {
     if (relacoesProntas) return setRelacoes(relacoesProntas);
@@ -86,7 +89,11 @@ export default function App({ animes: base, relacoes: relacoesProntas, history, 
   }, []);
 
   const setTab = (t: Tab) => {
-    if (t !== tab) router.push(urlDaTab(t), { scroll: false });
+    if (t === tab) return;
+    startTransition(() => {
+      setTabOtimista(t);
+      router.push(urlDaTab(t), { scroll: false });
+    });
   };
 
   // Cada mudança de filtro/ordenação reescreve o endereço (replace: não enche o histórico do voltar).

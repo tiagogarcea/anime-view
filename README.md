@@ -145,7 +145,7 @@ Imagens coladas e a URL por trás do texto "Link" não saem no gviz: vêm do `do
 Três abas no topo: **ANIME LIST** (`/`), **STATS** (`/stats` e `/stats/retrospectiva`) e
 **TEMPORADA** (`/temporada`), definidas em `lib/tabs.ts`. Cada aba é uma página pronta, então o F5
 abre direto nela. Os dados e o App ficam no layout comum (`app/(site)/layout.tsx`; as páginas só
-marcam o endereço): trocar de aba é uma navegação do Next que não recarrega nada, e voltar/avançar do
+marcam o endereço): trocar de aba é uma navegação do Next que não recarrega nada (a aba muda na hora, com `useOptimistic`, sem esperar o servidor responder a rota; o endereço acompanha), e voltar/avançar do
 navegador funciona. Links antigos `/?aba=stats` e `/?aba=temporada` são redirecionados
 (`next.config.mjs`); `/#stats` e `/#temporada` são convertidos no navegador.
 
