@@ -188,9 +188,10 @@ select, .dir {
   display: block; padding: 3px; border: 0; border-radius: 12px; text-align: left;
   background: var(--frame, #1a1a26); transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.card { width: 100%; }
+.card { width: 100%; content-visibility: auto; contain-intrinsic-size: auto 330px; }
 .card:hover { transform: translateY(-4px); box-shadow: 0 18px 40px -16px var(--glow, rgba(45,226,230,0.35)); }
-.frame-SSR { --frame: linear-gradient(135deg, var(--gold), var(--cyan), var(--red), var(--gold)); --glow: rgba(247,215,116,0.5); background-size: 200% 200%; animation: foil 6s linear infinite; }
+.frame-SSR { --frame: linear-gradient(135deg, var(--gold), var(--cyan), var(--red), var(--gold)); --glow: rgba(247,215,116,0.5); background-size: 200% 200%; }
+.frame-SSR:hover { animation: foil 6s linear infinite; }
 .frame-SR { --frame: #5a161c; --glow: rgba(255,45,61,0.45); }
 .frame-R { --frame: #16393e; --glow: rgba(45,226,230,0.4); }
 .frame-N { --frame: #1a1a26; --glow: rgba(133,133,160,0.3); }

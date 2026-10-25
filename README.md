@@ -30,6 +30,7 @@ npm run typecheck  # checagem de tipos (gera os tipos das rotas antes)
   Temporada Atual (gviz), escolha do resultado do AniList, nome do site pelo link.
 - `tests/planilha.test.ts` — leitura das abas Animes Completos e Historico (formatos de data,
   colunas, ligação pelo nome, linhas sem par e sugestão de nome), raridade.
+- `tests/protecao.test.ts` — origem permitida e limite de senhas erradas da rota que grava.
 - `tests/filtros.test.ts` — filtros, ordenação, endereço de cada aba e filtros no endereço.
 - `tests/franquias.test.ts` — agrupamento (temporada faltando, OVA, spin-off separado, coluna
   Franquia juntando com o grupo automático), resumo e filtro/endereço.
@@ -67,11 +68,27 @@ push (ou rode `Git_Push.bat`, que faz `git add .`, commit com data/hora e push).
 - **Prazo para fontes lentas** (`components/Pagina.tsx`): Temporada (~7 s com cache vazio) e franquias
   (~12 s) não seguram a renovação: se passarem do prazo, a página sai sem elas e a busca termina em
   segundo plano (`after`). As franquias, se faltarem, o navegador busca em `GET /api/franquias`.
-- **Tempo limite** em toda busca externa (`AbortSignal.timeout`: planilha 15 s, script de leitura da Temporada 30 s (ele leva 5 a 18 s; se falhar, a leitura dá erro e o cache mantém a versão anterior, com os links),
+- **Tempo limite** em toda busca externa (`AbortSignal.timeout`: planilha 15 s, script de leitura (links e logos) 30 s — ele leva 5 a 18 s, por isso é lido à parte da lista (`lerExtras`, cache de 120 s): se falhar, o cache mantém a versão anterior e a lista da Temporada nunca fica vazia por causa dele,
   AniList 10 s): nada fica pendurado.
 - **Erro num pedaço não derruba a página**: cada painel e aba fica dentro de `components/Seguro.tsx`,
   que mostra "Não consegui mostrar ... TENTAR DE NOVO" só no lugar dele. Erro geral: `app/error.tsx`
   (tela com "tentar de novo") e `app/global-error.tsx`.
+- **Fluidez no navegador.** A busca por nome não trava a digitação (`useDeferredValue` em
+  `components/App.tsx`: o campo atualiza na hora e a lista refiltra logo depois); os cards fora da tela
+  não são desenhados (`content-visibility` em `.card`); a animação dourada dos cards SSR só roda no hover
+  (antes ficava repintando todos os SSR o tempo todo).
+
+## Segurança
+
+- **Cabeçalhos em todas as páginas** (`next.config.mjs`): Content-Security-Policy (só o próprio site
+  executa script e faz requisição; imagens aceitam qualquer https porque as capas vêm de vários sites),
+  `X-Frame-Options: DENY` e `frame-ancestors 'none'` (o site não abre dentro de iframe),
+  `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, HSTS. O `X-Powered-By` foi removido.
+  `'unsafe-inline'` no script é exigido pelo Next e pelo `app/layout.tsx` (sem nonce).
+- **Gravação na planilha** (`POST /api/temporada`, regras em `lib/protecao.ts`): recusa pedidos de outro
+  site (`Origin` diferente do host → 403), corpo grande (413) e bloqueia o IP depois de 5 senhas erradas
+  em 10 minutos (429). O contador fica na memória de cada instância da Vercel, então é uma barreira contra
+  tentativa em massa, não um limite exato. A senha em si é conferida só pelo Apps Script.
 
 ### Variáveis de ambiente (todas opcionais)
 
@@ -99,7 +116,7 @@ sido lida com sucesso naquele servidor (cache vazio, ex.: logo após o primeiro 
 | **Historico** (`gid=1281634781`) | CSV público (`lib/history.ts`) | 60 s | Última versão boa; sem nenhuma, só o "Last seen" |
 | **Temporada Atual** | JSON do gviz (`lib/temporada.ts`) | 60 s, tag `temporada` | Última versão boa; sem nenhuma, "SEM DADOS" |
 | Capas da Temporada Atual | Coluna `Url Imagem` (gviz); reserva: GET no Apps Script | 60 s | Mostra a inicial do nome |
-| Streaming e link da Temporada | GET no Apps Script (colunas `Onde assistir?` e `Link`) | 60 s, tag `temporada` | Botão "assistir" não aparece |
+| Streaming e link da Temporada | GET no Apps Script (colunas `Onde assistir?` e `Link`), cache próprio (`lerExtras`) | 120 s | Botão "assistir" não aparece |
 | Episódios (total / lançados) | GraphQL do AniList | 1 h | Mostra "?" |
 | Franquias (ligações entre títulos) | GraphQL do AniList, ~12 consultas (`lib/franquias.ts`) | 6 h | Última versão boa; sem nenhuma, site sem franquias |
 
@@ -273,7 +290,7 @@ Layout de celular (bloco `@media (max-width: 640px)` no fim de `app/globals.css`
 { "numero": 3, "semanal": "V", "episodio": 5, "senha": "..." }  // grava "Semanal"
 ```
 
-Respostas: `200 { ok: true, ... }`, `400` dados inválidos, `401` senha errada, `502` script fora.
+Respostas: `200 { ok: true, ... }`, `400` dados inválidos, `401` senha errada, `403` pedido de outro site, `413` corpo grande, `429` muitas senhas erradas, `502` script fora.
 Em caso de sucesso, invalida o cache da tag `temporada` e todas as páginas.
 
 `GET /api/franquias` (`app/api/franquias/route.ts`): ligações do AniList (cache de 6 h), usado pelo
@@ -318,6 +335,7 @@ app/
   api/franquias/        rota GET com as ligações do AniList (reserva do navegador)
   icon.svg, apple-icon.png
 lib/
+  protecao.ts           origem permitida e limite de senhas erradas (POST /api/temporada)
   dados.ts              cache das 3 abas (60 s) e das franquias (6 h), com hora da leitura e a última versão boa
   franquias.ts          ligações do AniList → franquias; resumo de cada uma
   types.ts              tipo Anime, raridades (tierOf)

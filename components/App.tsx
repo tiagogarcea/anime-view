@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useOptimistic, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useMemo, useOptimistic, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Anime } from "@/lib/types";
 import type { SemPar, Viewing } from "@/lib/history";
@@ -67,7 +67,9 @@ export default function App({ animes: base, relacoes: relacoesProntas, history, 
   const [pick, setPick] = useState<Anime | null>(null);
   const [open, setOpen] = useState<Anime | null>(null);
 
-  const result = useMemo(() => applyFilters(animes, filters), [animes, filters]);
+  // a digitação na busca não espera a lista refiltrar: o filtro roda logo depois, sem travar o campo
+  const filtrosAdiados = useDeferredValue(filters);
+  const result = useMemo(() => applyFilters(animes, filtrosAdiados), [animes, filtrosAdiados]);
   const rows = useMemo(() => sortRows(result.rows, sortKey, sortAsc), [result.rows, sortKey, sortAsc]);
 
   // Lê filtros do endereço; voltar/avançar do navegador restaura os filtros daquele momento.

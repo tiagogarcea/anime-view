@@ -91,6 +91,12 @@ export default function Season({ items, atualizado }: { items: SeasonItem[]; atu
         setAviso("Senha incorreta.");
         return;
       }
+      if (r.status === 429) {
+        setVals((m) => new Map(m).set(numero, original));
+        marcaEstado(numero, "");
+        setAviso("Muitas tentativas de senha. Espere alguns minutos.");
+        return;
+      }
       if (!r.ok || !j.ok) throw new Error(j.erro ?? "erro");
       if (campo === "semanal" && j.coluna !== "Semanal") {
         // script do Google ainda na versão antiga: gravou só o episódio (igual ao que já estava)

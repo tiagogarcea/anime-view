@@ -1,7 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { loadAnimes } from "./sheet";
 import { loadHistory } from "./history";
-import { loadTemporada } from "./temporada";
+import { loadExtras, loadTemporada } from "./temporada";
 import { buscarRelacoes } from "./franquias";
 
 /**
@@ -17,6 +17,7 @@ const lido = <T>(load: () => Promise<T>) => async (): Promise<Lido<T>> => ({ dad
 
 export const lerAnimes = unstable_cache(lido(loadAnimes), ["animes-v1"], { revalidate: 60 });
 export const lerHistorico = unstable_cache(lido(loadHistory), ["historico-v1"], { revalidate: 60 });
+export const lerExtras = unstable_cache(lido(loadExtras), ["temporada-extras-v1"], { revalidate: 120 });
 export const lerTemporada = unstable_cache(lido(loadTemporada), ["temporada-v1"], { revalidate: 60, tags: ["temporada"] });
 
 /**

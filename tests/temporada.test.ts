@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  escolher, nomeDoSite, normSemanal, parseGviz, segundaDa, semanalAoMarcar, semanalEfetivo, variantes,
+  aplicarExtras, escolher, nomeDoSite, normSemanal, parseGviz, segundaDa, semanalAoMarcar, semanalEfetivo, variantes,
   type AlMedia,
 } from "@/lib/temporada";
 
@@ -109,4 +109,19 @@ test("AniList: variantes do nome para segunda busca", () => {
   assert.deepEqual(variantes("Tensei shitara Ken deshita II"), ["Tensei shitara Ken deshita 2", "Tensei shitara Ken deshita 2nd Season"]);
   assert.deepEqual(variantes("Tokyo Revengers: Santen Sensou-hen"), ["Tokyo Revengers"]);
   assert.deepEqual(variantes("Psyren"), []);
+});
+
+test("aplicarExtras: junta link e logo do script sem mexer na lista original", () => {
+  const base = { numero: 1, nome: "A", inicio: null, diaSemana: "Segunda", ultimoEp: null, semanal: "" as const, img: "", streamingImg: "", link: "", total: null, lancados: null };
+  const itens = [base, { ...base, numero: 2, img: "https://capa" }];
+  const out = aplicarExtras(itens, [
+    { numero: 1, imagem: "https://g/x=s2048?k=1", streaming: "https://g/y=s2048?k=1", link: "https://crunchyroll.com/a" },
+    { numero: 2, imagem: "https://g/z=s2048", link: "nao-e-url" },
+  ]);
+  assert.equal(out[0].link, "https://crunchyroll.com/a");
+  assert.equal(out[0].img, "https://g/x=s360?k=1");
+  assert.equal(out[0].streamingImg, "https://g/y=s96?k=1");
+  assert.equal(out[1].img, "https://capa"); // capa da coluna Url Imagem tem prioridade
+  assert.equal(out[1].link, "");
+  assert.equal(itens[0].link, ""); // original intacto
 });

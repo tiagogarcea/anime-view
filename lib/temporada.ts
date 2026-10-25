@@ -147,30 +147,39 @@ export async function loadTemporada(): Promise<SeasonItem[]> {
   const res = await fetch(GVIZ, { cache: "no-store", signal: AbortSignal.timeout(15000) });
   if (!res.ok) throw new Error(`Temporada respondeu ${res.status}`);
   const itens = parseGviz(await res.text());
-  await Promise.all([
-    // imagens coladas nas células e o link por trás do texto "Link" só saem pelo script do Google.
-    // A capa vem da coluna "Url Imagem"; a colada na coluna "Imagem" é só reserva.
-    // O script do Google leva de 5 a 18 s para responder. Se falhar ou estourar o prazo, dá erro de
-    // propósito: assim o cache mantém a última versão boa (com links) em vez de guardar uma sem eles.
-    (async () => {
-      const r = await fetch(SCRIPT_URL, { cache: "no-store", signal: AbortSignal.timeout(30000) });
-      if (!r.ok) throw new Error(`Script respondeu ${r.status}`);
-      const j = await r.json();
-      if (!j.ok) throw new Error("Script sem itens");
-      type Extra = { numero: number; imagem?: string; streaming?: string; link?: string };
-      const extras = new Map<number, Extra>((j.itens ?? []).map((x: Extra) => [Number(x.numero), x]));
-      for (const it of itens) {
-        const x = extras.get(it.numero);
-        if (!x) continue;
-        // o Google devolve as imagens em 2048 px: 360 px basta para a capa, 96 px para o logo
-        if (!it.img) it.img = (x.imagem ?? "").replace(/=s\d+(?=[?&]|$)/, "=s360");
-        it.streamingImg = (x.streaming ?? "").replace(/=s\d+(?=[?&]|$)/, "=s96");
-        it.link = /^https?:\/\//i.test(x.link ?? "") ? x.link! : "";
-      }
-    })(),
-    completarComAniList(itens).catch(() => { /* sem AniList: total fica "?" */ }),
-  ]);
+  await completarComAniList(itens).catch(() => { /* sem AniList: total fica "?" */ });
   return itens;
+}
+
+export type Extra = { numero: number; imagem?: string; streaming?: string; link?: string };
+
+/**
+ * Imagens coladas nas células e o link por trás do texto "Link" só saem pelo script do Google, que leva
+ * de 5 a 18 s. Por isso é lido à parte da lista (lib/dados.ts): se falhar, dá erro de propósito e o cache
+ * mantém a última versão com links; a lista da Temporada nunca depende dele.
+ */
+export async function loadExtras(): Promise<Extra[]> {
+  const r = await fetch(SCRIPT_URL, { cache: "no-store", signal: AbortSignal.timeout(30000) });
+  if (!r.ok) throw new Error(`Script respondeu ${r.status}`);
+  const j = await r.json();
+  if (!j.ok || !Array.isArray(j.itens)) throw new Error("Script sem itens");
+  return j.itens;
+}
+
+/** Junta capa (reserva), logo do streaming e link do script aos itens; devolve cópias. */
+export function aplicarExtras(itens: SeasonItem[], extras: Extra[]): SeasonItem[] {
+  const por = new Map(extras.map((x) => [Number(x.numero), x]));
+  return itens.map((it) => {
+    const x = por.get(it.numero);
+    if (!x) return it;
+    return {
+      ...it,
+      // o Google devolve as imagens em 2048 px: 360 px basta para a capa, 96 px para o logo
+      img: it.img || (x.imagem ?? "").replace(/=s\d+(?=[?&]|$)/, "=s360"),
+      streamingImg: (x.streaming ?? "").replace(/=s\d+(?=[?&]|$)/, "=s96"),
+      link: /^https?:\/\//i.test(x.link ?? "") ? x.link! : "",
+    };
+  });
 }
 
 /** Segunda-feira da semana de uma data AAAA-MM-DD (a semana começa na segunda). */

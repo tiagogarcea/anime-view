@@ -1,5 +1,8 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { normSemanal, SCRIPT_URL } from "@/lib/temporada";
+import { ipDe, LimiteDeErros, origemPermitida } from "@/lib/protecao";
+
+const limite = new LimiteDeErros();
 
 /**
  * Grava na aba "Temporada Atual" pelo script do Google:
@@ -8,6 +11,14 @@ import { normSemanal, SCRIPT_URL } from "@/lib/temporada";
  * A senha é conferida pelo próprio script (propriedade SENHA); aqui só repassamos.
  */
 export async function POST(req: Request) {
+  if (!origemPermitida(req.headers.get("origin"), req.headers.get("host"))) {
+    return Response.json({ ok: false, erro: "origem" }, { status: 403 });
+  }
+  const ip = ipDe(req);
+  if (limite.bloqueado(ip)) return Response.json({ ok: false, erro: "muitas" }, { status: 429 });
+  if (Number(req.headers.get("content-length") ?? 0) > 2000) {
+    return Response.json({ ok: false, erro: "dados" }, { status: 413 });
+  }
   let body: { numero?: unknown; episodio?: unknown; semanal?: unknown; senha?: unknown };
   try {
     body = await req.json();
@@ -43,7 +54,11 @@ export async function POST(req: Request) {
       signal: AbortSignal.timeout(20000),
     });
     const j = await r.json();
-    if (!j.ok) return Response.json(j, { status: j.erro === "senha" ? 401 : 400 });
+    if (!j.ok) {
+      if (j.erro === "senha") limite.errou(ip);
+      return Response.json(j, { status: j.erro === "senha" ? 401 : 400 });
+    }
+    limite.acertou(ip);
     // expira na hora: a próxima visita já lê a planilha atualizada
     revalidateTag("temporada", { expire: 0 });
     revalidatePath("/", "layout"); // todas as páginas (/, /stats, /temporada…)
